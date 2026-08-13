@@ -1,10 +1,17 @@
-// MainPage.ets — 云上商工 主页（HDS 悬浮底栏）
-// Tab: 首页 / 服务 / 消息 / 日程 / 我的
-// 二级页（设置/账号安全等）用 Navigation 原生导航
-import { HdsTabs, HdsTabsController, hdsMaterial } from '@kit.UIDesignKit';
+// MainPage.ets — 云上商工 主页（HdsNavigation 沉浸导航 + HdsTabs 底部导航）
+// 移植自 Authenticator-main 的沉浸式 UI：HdsNavigation 标题栏（系统材质+渐变模糊+深浅色）
+import {
+  HdsNavigation,
+  HdsNavigationMenuContentOptions,
+  HdsNavigationTitleMode,
+  HdsTabs,
+  HdsTabsController,
+  ScrollEffectType,
+  BlurStrategy,
+  hdsMaterial
+} from '@kit.UIDesignKit';
 import { SymbolGlyphModifier } from '@kit.ArkUI';
 import { router } from '@kit.ArkUI';
-import { ThemeColors } from '../utils/ThemeColors';
 import { PreferenceUtil } from '../utils/PreferenceUtil';
 import { SqgService } from '../services/SqgService';
 import { HomeTab } from './tabs/HomeTab';
@@ -26,38 +33,28 @@ interface TabItem {
 
 const TAB_CONFIG: TabItem[] = [
   {
-    normal: new SymbolGlyphModifier($r('sys.symbol.house_fill'))
-      .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.house_fill'))
-      .fontColor([$r('sys.color.ohos_id_color_activated')]),
+    normal: new SymbolGlyphModifier($r('sys.symbol.house_fill')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+    selected: new SymbolGlyphModifier($r('sys.symbol.house_fill')).fontColor([$r('sys.color.ohos_id_color_activated')]),
     label: '首页'
   },
   {
-    normal: new SymbolGlyphModifier($r('sys.symbol.square_grid_2x2'))
-      .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.square_grid_2x2'))
-      .fontColor([$r('sys.color.ohos_id_color_activated')]),
+    normal: new SymbolGlyphModifier($r('sys.symbol.square_grid_2x2')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+    selected: new SymbolGlyphModifier($r('sys.symbol.square_grid_2x2')).fontColor([$r('sys.color.ohos_id_color_activated')]),
     label: '服务'
   },
   {
-    normal: new SymbolGlyphModifier($r('sys.symbol.message_fill'))
-      .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.message_fill'))
-      .fontColor([$r('sys.color.ohos_id_color_activated')]),
+    normal: new SymbolGlyphModifier($r('sys.symbol.message_fill')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+    selected: new SymbolGlyphModifier($r('sys.symbol.message_fill')).fontColor([$r('sys.color.ohos_id_color_activated')]),
     label: '消息'
   },
   {
-    normal: new SymbolGlyphModifier($r('sys.symbol.calendar'))
-      .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.calendar'))
-      .fontColor([$r('sys.color.ohos_id_color_activated')]),
+    normal: new SymbolGlyphModifier($r('sys.symbol.calendar')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+    selected: new SymbolGlyphModifier($r('sys.symbol.calendar')).fontColor([$r('sys.color.ohos_id_color_activated')]),
     label: '日程'
   },
   {
-    normal: new SymbolGlyphModifier($r('sys.symbol.person_fill'))
-      .fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.person_fill'))
-      .fontColor([$r('sys.color.ohos_id_color_activated')]),
+    normal: new SymbolGlyphModifier($r('sys.symbol.person_fill')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
+    selected: new SymbolGlyphModifier($r('sys.symbol.person_fill')).fontColor([$r('sys.color.ohos_id_color_activated')]),
     label: '我的'
   }
 ]
@@ -69,8 +66,24 @@ struct MainPage {
   @State currentIndex: number = 0;
   @State serviceTabFocus: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
-  @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   private hdsTabsController: HdsTabsController = new HdsTabsController();
+
+  private currentHomeTitle(): string {
+    const titles: string[] = ['云上商工', '服务', '消息', '日程', '我的'];
+    return titles[this.currentIndex];
+  }
+
+  private pageBackgroundColor(): string {
+    return this.themeIsDark ? '#000000' : '#F2F3F5';
+  }
+
+  private configuredMaterialType(): hdsMaterial.MaterialType {
+    return hdsMaterial.MaterialType.ADAPTIVE;
+  }
+
+  private configuredMaterialLevel(): hdsMaterial.MaterialLevel {
+    return hdsMaterial.MaterialLevel.ADAPTIVE;
+  }
 
   aboutToAppear(): void {
     if (!SqgService.getInstance().isLoggedIn()) {
@@ -86,6 +99,24 @@ struct MainPage {
     });
     PreferenceUtil.putBool('is_logged_in', false);
     router.replaceUrl({ url: 'pages/login/LoginPage' });
+  }
+
+  // 右上角菜单（沉浸标题栏）
+  private homeMenu(): HdsNavigationMenuContentOptions {
+    return {
+      value: [
+        {
+          content: {
+            icon: $r('sys.symbol.gearshape'),
+            label: '设置',
+            action: () => {
+              this.pageStack.pushPathByName('SettingsPage', undefined);
+            }
+          }
+        }
+      ],
+      maxCount: 1
+    };
   }
 
   // Navigation 二级页路由映射
@@ -107,16 +138,15 @@ struct MainPage {
   @Builder
   PlaceholderTab(text: string) {
     Column() {
-      Text(text).fontSize(16).fontColor(ThemeColors.textSecondary)
+      Text(text).fontSize(16).fontColor(this.themeIsDark ? '#FFFFFF' : '#666666')
     }
     .width('100%').height('100%')
     .justifyContent(FlexAlign.Center)
-    .backgroundColor(ThemeColors.bgPage)
   }
 
   build() {
-    Navigation(this.pageStack) {
-      Stack() {
+    Stack() {
+      HdsNavigation(this.pageStack) {
         HdsTabs({ controller: this.hdsTabsController }) {
           TabContent() {
             HomeTab({ onMoreClick: (): void => {
@@ -156,25 +186,49 @@ struct MainPage {
           barBottomMargin: 16,
           adaptToHandedness: true,
           systemMaterialEffect: {
-            materialType: hdsMaterial.MaterialType.ADAPTIVE,
-            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+            materialType: this.configuredMaterialType(),
+            materialLevel: this.configuredMaterialLevel()
           }
         })
         .onChange((index: number) => {
           this.currentIndex = index;
         })
-        .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.CUTOUT], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
         .backgroundColor(Color.Transparent)
         .width('100%')
         .height('100%')
       }
+      .mode(NavigationMode.Stack)
+      .titleBar({
+        content: {
+          title: {
+            mainTitle: this.currentHomeTitle()
+          },
+          menu: this.homeMenu()
+        },
+        style: {
+          scrollEffectOpts: {
+            enableScrollEffect: false,
+            scrollEffectType: ScrollEffectType.GRADIENT_BLUR
+          },
+          blurStrategy: BlurStrategy.ADAPTIVE,
+          originalStyle: { backgroundStyle: { backgroundColor: '#00ffffff' } },
+          scrollEffectStyle: { backgroundStyle: { backgroundColor: '#00ffffff' } },
+          systemMaterialEffect: {
+            materialType: this.configuredMaterialType(),
+            materialLevel: this.configuredMaterialLevel()
+          }
+        },
+        avoidLayoutSafeArea: true,
+        enableComponentSafeArea: false
+      })
+      .navDestination(this.PageMap)
+      .hideBackButton(true)
+      .titleMode(HdsNavigationTitleMode.MINI)
       .width('100%')
       .height('100%')
     }
-    .navDestination(this.PageMap)
-    .mode(NavigationMode.Stack)
-    .hideTitleBar(true)
     .width('100%')
     .height('100%')
+    .backgroundColor(this.pageBackgroundColor())
   }
 }
