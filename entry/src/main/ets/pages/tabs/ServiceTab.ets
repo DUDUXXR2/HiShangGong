@@ -263,7 +263,7 @@ export struct ServiceTab {
         Text('管理').fontSize(14).fontColor('#2979FF')
           .margin({ left: 12 })
       }
-      .width('100%').padding({ left: 16, right: 16, top: this.statusBarHeight + 8, bottom: 8 })
+      .width('100%').padding({ left: 16, right: 16, top: this.statusBarHeight + 56, bottom: 8 })
     }
     .width('100%')
     .backgroundColor(ThemeColors.bgPage)

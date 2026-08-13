@@ -68,9 +68,31 @@ struct MainPage {
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
   private hdsTabsController: HdsTabsController = new HdsTabsController();
 
+  // 按当前 tab 返回标题栏标题（"我的"页无标题文字，由内容区顶部呈现）
   private currentHomeTitle(): string {
-    const titles: string[] = ['云上商工', '服务', '消息', '日程', '我的'];
+    const titles: string[] = ['云上商工', '服务', '消息', '日程', ''];
     return titles[this.currentIndex];
+  }
+
+  // 按当前 tab 返回右上角菜单（"我的"页无菜单）
+  private homeMenu(): HdsNavigationMenuContentOptions {
+    if (this.currentIndex === 4) {
+      return { value: [], maxCount: 0 };
+    }
+    return {
+      value: [
+        {
+          content: {
+            icon: $r('sys.symbol.gearshape'),
+            label: '设置',
+            action: () => {
+              this.pageStack.pushPathByName('SettingsPage', undefined);
+            }
+          }
+        }
+      ],
+      maxCount: 1
+    };
   }
 
   private pageBackgroundColor(): string {
@@ -99,24 +121,6 @@ struct MainPage {
     });
     PreferenceUtil.putBool('is_logged_in', false);
     router.replaceUrl({ url: 'pages/login/LoginPage' });
-  }
-
-  // 右上角菜单（沉浸标题栏）
-  private homeMenu(): HdsNavigationMenuContentOptions {
-    return {
-      value: [
-        {
-          content: {
-            icon: $r('sys.symbol.gearshape'),
-            label: '设置',
-            action: () => {
-              this.pageStack.pushPathByName('SettingsPage', undefined);
-            }
-          }
-        }
-      ],
-      maxCount: 1
-    };
   }
 
   // Navigation 二级页路由映射

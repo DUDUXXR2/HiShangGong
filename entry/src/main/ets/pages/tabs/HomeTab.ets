@@ -288,15 +288,14 @@ export struct HomeTab {
         .onClick(() => { this.openSearch(); })
 
         Image($r('app.media.ic_notify'))
-          .width(22).height(22).fillColor('#FFFFFF')
+          .width(22).height(22).fillColor(this.themeIsDark ? '#FFFFFF' : '#1A1A1A')
           .margin({ left: 12, right: 12 })
           .onClick(() => { this.onBellClick(); })
       }
-      .width('100%').padding({ left: 16, right: 8, top: this.statusBarHeight + 8, bottom: 12 })
+      .width('100%').padding({ left: 16, right: 16, top: this.statusBarHeight + 56, bottom: 12 })
     }
     .width('100%')
-    .backgroundColor('#2979FF')
-    .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.CUTOUT], [SafeAreaEdge.TOP])
+    .backgroundColor(Color.Transparent)
   }
 
   @Builder
