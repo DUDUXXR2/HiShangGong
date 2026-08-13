@@ -14,6 +14,7 @@ import { SymbolGlyphModifier } from '@kit.ArkUI';
 import { router } from '@kit.ArkUI';
 import { PreferenceUtil } from '../utils/PreferenceUtil';
 import { SqgService } from '../services/SqgService';
+import { MaterialConfig } from '../utils/MaterialConfig';
 import { HomeTab } from './tabs/HomeTab';
 import { ServiceTab } from './tabs/ServiceTab';
 import { MineTab } from './tabs/MineTab';
@@ -100,11 +101,11 @@ struct MainPage {
   }
 
   private configuredMaterialType(): hdsMaterial.MaterialType {
-    return hdsMaterial.MaterialType.ADAPTIVE;
+    return MaterialConfig.configuredMaterialType();
   }
 
   private configuredMaterialLevel(): hdsMaterial.MaterialLevel {
-    return hdsMaterial.MaterialLevel.ADAPTIVE;
+    return MaterialConfig.configuredMaterialLevel();
   }
 
   aboutToAppear(): void {
