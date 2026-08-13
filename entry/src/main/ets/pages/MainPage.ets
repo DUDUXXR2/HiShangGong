@@ -23,6 +23,7 @@ import { AccountSecurityPage } from './AccountSecurityPage';
 import { ServiceWebPage } from './ServiceWebPage';
 import { ClassTablePage } from './ClassTablePage';
 import { ProfileCenterPage } from './ProfileCenterPage';
+import { AppearancePage } from './AppearancePage';
 
 const TAG = 'MainPage';
 
@@ -69,9 +70,9 @@ struct MainPage {
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
   private hdsTabsController: HdsTabsController = new HdsTabsController();
 
-  // 按当前 tab 返回标题栏标题（"我的"页无标题文字，由内容区顶部呈现）
+  // 按当前 tab 返回标题栏标题（"我的"页显示"我的"）
   private currentHomeTitle(): string {
-    const titles: string[] = ['云上商工', '服务', '消息', '日程', ''];
+    const titles: string[] = ['云上商工', '服务', '消息', '日程', '我的'];
     return titles[this.currentIndex];
   }
 
@@ -137,6 +138,8 @@ struct MainPage {
       ClassTablePage()
     } else if (name === 'ProfileCenterPage') {
       ProfileCenterPage()
+    } else if (name === 'AppearancePage') {
+      AppearancePage()
     }
   }
 

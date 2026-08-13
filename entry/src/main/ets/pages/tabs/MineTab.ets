@@ -1,7 +1,9 @@
 import { ThemeColors } from '../../utils/ThemeColors';
 import { PreferenceUtil } from '../../utils/PreferenceUtil';
 import { SqgService } from '../../services/SqgService';
+import { MaterialConfig } from '../../utils/MaterialConfig';
 import { WebPageParam } from '../NavParams';
+import { HdsTabs } from '@kit.UIDesignKit';
 
 const TAG = 'MineTab';
 
@@ -128,9 +130,8 @@ export struct MineTab {
     }
     .width('100%')
     .padding({ left: 20, right: 20, top: 20, bottom: 20 })
-    .backgroundColor(ThemeColors.bgCard)
+    .backgroundColor(MaterialConfig.shouldUseCardMaterial() ? Color.Transparent : ThemeColors.bgCard)
     .borderRadius(16)
-    .shadow({ radius: 8, color: '#14000000', offsetY: 2 })
     .onClick(() => { this.pageStack.pushPathByName('ProfileCenterPage', undefined); })
   }
 
@@ -138,33 +139,89 @@ export struct MineTab {
     return AppStorage.get<boolean>('theme_is_dark') === true;
   }
 
+  // 玻璃光感卡片容器：开启沉浸时用系统材质层，否则纯色卡片
+  @Builder
+  MaterialBar() {
+    Stack()
+      .width('100%')
+      .height(100)
+      .backgroundColor(Color.Transparent)
+      .hitTestBehavior(HitTestMode.None)
+  }
+
+  @Builder
+  ImmersionCard(cardHeight: Length, radius: number) {
+    Stack({ alignContent: Alignment.Top }) {
+      if (MaterialConfig.shouldUseCardMaterial()) {
+        HdsTabs() {
+          TabContent() {
+          }
+          .backdropBlur(0)
+          .tabBar(this.MaterialBar())
+          .clip(false)
+        }
+        .width('100%')
+        .height(cardHeight)
+        .barWidth('100%')
+        .barHeight(cardHeight)
+        .barOverlap(true)
+        .barPosition(BarPosition.End)
+        .barBackgroundStyle({ maskColor: '#00000000' })
+        .barBackgroundBlurStyle(BlurStyle.NONE)
+        .barFloatingStyle({
+          barBottomMargin: 0,
+          systemMaterialEffect: {
+            materialType: MaterialConfig.configuredMaterialType(),
+            materialLevel: MaterialConfig.configuredMaterialLevel()
+          },
+          gradientMask: { maskColor: '#09999999' }
+        })
+        .backgroundColor(Color.Transparent)
+        .hitTestBehavior(HitTestMode.None)
+        .clip(false)
+      }
+    }
+    .width('100%')
+    .height(cardHeight)
+    .borderRadius(radius)
+    .clip(true)
+    .backgroundColor(MaterialConfig.shouldUseCardMaterial() ? Color.Transparent : ThemeColors.bgCard)
+    .hitTestBehavior(HitTestMode.None)
+  }
+
   build() {
     Scroll() {
       Column({ space: 12 }) {
-        // 头像模块
-        this.AvatarModule()
-
-        // 一卡通/邮箱/图书 模块
-        Row() {
-          this.CardCell($r('app.media.ic_wallet'), '一卡通余额', this.cardBalance, '#E53935')
-          this.CardCell($r('app.media.ic_mail'), '我的邮箱', this.emailCount + '封', '#1565C0')
-          this.CardCell($r('app.media.ic_library'), '图书借阅', this.bookCount + '本', '#1565C0')
+        // 头像模块（玻璃卡片）
+        Stack({ alignContent: Alignment.Top }) {
+          this.ImmersionCard(104, 16)
+          this.AvatarModule()
         }
         .width('100%')
-        .backgroundColor(ThemeColors.bgCard)
-        .borderRadius(16)
-        .shadow({ radius: 8, color: '#14000000', offsetY: 2 })
-        .padding({ left: 8, right: 8 })
 
-        // 设置模块（仅保留设置）
-        Column() {
-          this.ListItem($r('app.media.ic_settings'), '设置', () => { this.pageStack.pushPathByName('SettingsPage', undefined); })
+        // 一卡通/邮箱/图书 模块（玻璃卡片）
+        Stack({ alignContent: Alignment.Top }) {
+          this.ImmersionCard(92, 16)
+          Row() {
+            this.CardCell($r('app.media.ic_wallet'), '一卡通余额', this.cardBalance, '#E53935')
+            this.CardCell($r('app.media.ic_mail'), '我的邮箱', this.emailCount + '封', '#1565C0')
+            this.CardCell($r('app.media.ic_library'), '图书借阅', this.bookCount + '本', '#1565C0')
+          }
+          .width('100%')
+          .padding({ left: 8, right: 8 })
         }
         .width('100%')
-        .backgroundColor(ThemeColors.bgCard)
-        .borderRadius(16)
-        .shadow({ radius: 8, color: '#14000000', offsetY: 2 })
-        .padding({ top: 4, bottom: 4 })
+
+        // 设置模块（玻璃卡片）
+        Stack({ alignContent: Alignment.Top }) {
+          this.ImmersionCard(58, 16)
+          Column() {
+            this.ListItem($r('app.media.ic_settings'), '设置', () => { this.pageStack.pushPathByName('SettingsPage', undefined); })
+          }
+          .width('100%')
+          .padding({ top: 4, bottom: 4 })
+        }
+        .width('100%')
       }
       .width('100%')
       .padding({ left: 12, right: 12, top: this.statusBarHeight + 56, bottom: 24 })
