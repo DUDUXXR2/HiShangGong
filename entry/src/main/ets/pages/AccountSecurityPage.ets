@@ -60,7 +60,7 @@ export struct AccountSecurityPage {
         Column() {
           this.InfoRow('当前账号', this.account)
         }
-        .width('100%').backgroundColor('#FFFFFF').borderRadius(16)
+        .width('100%').backgroundColor(ThemeColors.bgCard).borderRadius(16)
         .margin({ top: 12, left: 12, right: 12 })
         .padding({ top: 4, bottom: 4 })
 
@@ -69,14 +69,14 @@ export struct AccountSecurityPage {
           this.ActionRow($r('app.media.ic_public_edit'), '修改密码', () => { this.openChangePwd(); })
           this.ActionRow($r('app.media.ic_lock'), '退出登录', () => { this.logout(); })
         }
-        .width('100%').backgroundColor('#FFFFFF').borderRadius(16)
+        .width('100%').backgroundColor(ThemeColors.bgCard).borderRadius(16)
         .margin({ top: 12, left: 12, right: 12 })
         .padding({ top: 4, bottom: 4 })
       }
-      .width('100%').height('100%').backgroundColor('#F5F7FA')
+      .width('100%').height('100%').backgroundColor(ThemeColors.bgPage)
     }
     .title('账号与安全')
-    .backgroundColor('#F5F7FA')
+    .backgroundColor(ThemeColors.bgPage)
     .hideTitleBar(false)
   }
 }

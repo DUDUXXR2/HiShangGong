@@ -71,10 +71,10 @@ export struct ProfileCenterPage {
         Divider().color('#F0F0F0').strokeWidth(0.5).margin({ left: 16, right: 16 })
         this.RowItem('账号身份', this.identity)
       }
-      .width('100%').height('100%').backgroundColor('#F5F7FA')
+      .width('100%').height('100%').backgroundColor(ThemeColors.bgPage)
     }
     .title('个人中心')
-    .backgroundColor('#F5F7FA')
+    .backgroundColor(ThemeColors.bgPage)
     .hideTitleBar(false)
   }
 }

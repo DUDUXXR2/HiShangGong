@@ -266,7 +266,7 @@ export struct ServiceTab {
       .width('100%').padding({ left: 16, right: 16, top: this.statusBarHeight + 8, bottom: 8 })
     }
     .width('100%')
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(ThemeColors.bgPage)
     .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.CUTOUT], [SafeAreaEdge.TOP])
   }
 
@@ -353,7 +353,7 @@ export struct ServiceTab {
     }
     .width('100%').height(56).alignItems(VerticalAlign.Center)
     .padding({ left: 12 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(ThemeColors.bgCard)
     .onClick(() => { this.openService(item); })
   }
 
@@ -411,7 +411,7 @@ export struct ServiceTab {
             .scrollable(ScrollDirection.Horizontal)
             .scrollBar(BarState.Off)
             .width('100%').height(44)
-            .backgroundColor('#FFFFFF')
+            .backgroundColor(ThemeColors.bgPage)
 
             Scroll(this.scroller) {
               Column() {
@@ -431,7 +431,7 @@ export struct ServiceTab {
             }
             .layoutWeight(1)
             .scrollBar(BarState.Off)
-            .backgroundColor('#F5F7FA')
+            .backgroundColor(ThemeColors.bgPage)
           }
           .width('100%').layoutWeight(1)
         }

@@ -130,7 +130,7 @@ export struct MineTab {
         this.CardCell($r('app.media.ic_library'), '图书借阅', this.bookCount + '本', '#1565C0')
       }
       .width('100%')
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(ThemeColors.bgCard)
       .borderRadius(16)
       .shadow({ radius: 8, color: '#14000000', offsetY: 2 })
       .padding({ left: 8, right: 8 })
@@ -146,7 +146,7 @@ export struct MineTab {
         this.ListItem($r('app.media.ic_public_share'), '第三方共享个人信息清单', () => { this.openH5('第三方共享'); })
       }
       .width('100%')
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(ThemeColors.bgCard)
       .borderRadius(16)
       .shadow({ radius: 8, color: '#14000000', offsetY: 2 })
       .margin({ left: 12, right: 12, top: 12 })

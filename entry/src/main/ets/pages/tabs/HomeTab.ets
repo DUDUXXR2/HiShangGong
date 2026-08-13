@@ -357,7 +357,7 @@ export struct HomeTab {
       .width('100%')
     }
     .width('100%')
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(ThemeColors.bgCard)
     .borderRadius(16)
     .shadow({ radius: 8, color: '#14000000', offsetY: 2 })
     .margin({ left: 12, right: 12, top: 12 })
@@ -388,7 +388,7 @@ export struct HomeTab {
           .width('100%').padding({ bottom: 20 })
         }
         .width('100%').layoutWeight(1)
-        .backgroundColor('#F0F4FF')
+        .backgroundColor(ThemeColors.bgPage)
       } else {
         this.BlueHeader()
         Scroll() {
@@ -399,7 +399,7 @@ export struct HomeTab {
         }
         .width('100%').layoutWeight(1)
         .scrollBar(BarState.Off)
-        .backgroundColor('#F0F4FF')
+        .backgroundColor(ThemeColors.bgPage)
       }
     }
     .width('100%').height('100%')
@@ -421,7 +421,7 @@ export struct HomeTab {
     }
     .width('100%').height(56).alignItems(VerticalAlign.Center)
     .padding({ left: 12 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(ThemeColors.bgCard)
     .margin({ top: 1 })
     .onClick(() => { this.openService(item); })
   }

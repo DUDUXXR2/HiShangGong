@@ -41,7 +41,7 @@ export struct SettingsPage {
         Column() {
           this.ListItem($r('app.media.ic_lock'), '账号与安全', () => { this.openAccountSecurity(); })
         }
-        .width('100%').backgroundColor('#FFFFFF').borderRadius(16)
+        .width('100%').backgroundColor(ThemeColors.bgCard).borderRadius(16)
         .margin({ top: 12, left: 12, right: 12 })
         .padding({ top: 4, bottom: 4 })
 
@@ -49,14 +49,14 @@ export struct SettingsPage {
         Button('退出登录')
           .fontSize(14).fontColor('#E53935')
           .width('88%').height(46)
-          .backgroundColor('#FFFFFF').borderRadius(23)
+          .backgroundColor(ThemeColors.bgCard).borderRadius(23)
           .margin({ bottom: 24 })
           .onClick(() => this.logout())
       }
-      .width('100%').height('100%').backgroundColor('#F5F7FA')
+      .width('100%').height('100%').backgroundColor(ThemeColors.bgPage)
     }
     .title('设置')
-    .backgroundColor('#F5F7FA')
+    .backgroundColor(ThemeColors.bgPage)
     .hideTitleBar(false)
   }
 }
