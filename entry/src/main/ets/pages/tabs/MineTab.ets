@@ -1,3 +1,5 @@
+// MineTab.ets — 我的页（完整复刻 Authenticator-main MePageContent 结构）
+// 结构：WaterFlow 卡片流 = 头像登录卡 + 分类操作卡；卡片用 ImmersionCardSurface 玻璃光感层
 import { ThemeColors } from '../../utils/ThemeColors';
 import { PreferenceUtil } from '../../utils/PreferenceUtil';
 import { SqgService } from '../../services/SqgService';
@@ -7,9 +9,24 @@ import { HdsTabs } from '@kit.UIDesignKit';
 
 const TAG = 'MineTab';
 
+// 复刻 Authenticator 的布局常量
+const HOME_HORIZONTAL_PADDING: number = 20;
+const PAGE_CARD_GAP: number = 10;
+const HOME_TITLE_HEIGHT: number = 56;
+const ME_CARD_RADIUS: number = 15;
+const ME_LOGIN_CARD_HEIGHT: number = 75;
+const ME_ROW_HEIGHT: number = 60;
+const ME_AVATAR_SIZE: number = 48;
+const ME_ACTION_TEXT_SIZE: number = 15;
+const ME_ACTION_ICON_SIZE: number = 20;
+const ME_ACTION_CONTENT_GAP: number = 16;
+
 @Component
 export struct MineTab {
   @Consume('pageStack') pageStack: NavPathStack;
+  @StorageProp('statusBarHeight') statusBarHeight: number = 0;
+  @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
+  @StorageLink('theme_is_dark') themeIsDark: boolean = false;
   @State name: string = '';
   @State account: string = '';
   @State cardBalance: string = '--';
@@ -17,7 +34,7 @@ export struct MineTab {
   @State bookCount: string = '--';
   @State avatarUrl: string = '';
   @State avatarLoadFailed: boolean = false;
-  @StorageProp('statusBarHeight') statusBarHeight: number = 0;
+  private meScroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
     this.account = PreferenceUtil.getString('ids_account');
@@ -60,104 +77,71 @@ export struct MineTab {
     }
   }
 
-  private openH5(title: string): void {
-    this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(title, 'https://i.sqgxy.edu.cn/h5/'));
+  private isDarkTheme(): boolean {
+    return this.themeIsDark;
   }
 
+  private pageBackgroundColor(): string {
+    return this.themeIsDark ? '#000000' : '#F2F3F5';
+  }
+
+  // ===== 复刻 Authenticator 卡片支撑方法 =====
+
+  private shouldUseCardMaterial(): boolean {
+    return MaterialConfig.shouldUseCardMaterial();
+  }
+
+  private cardBackgroundColor(): string {
+    return this.themeIsDark ? '#191919' : '#FFFFFF';
+  }
+
+  private cardSurfaceBaseColor(fallback: ResourceColor): ResourceColor {
+    return this.shouldUseCardMaterial() ? Color.Transparent : fallback;
+  }
+
+  private immersionBorderColor(): ResourceColor {
+    return this.themeIsDark ? '#80FFFFFF' : '#80000000';
+  }
+
+  private cardSurfaceBorderWidth(): number {
+    return this.shouldUseCardMaterial() ? 0.5 : 0;
+  }
+
+  private dividerColor(): string {
+    return this.themeIsDark ? '#444444' : '#E6E6E6';
+  }
+
+  private secondaryTextColor(): string {
+    return this.themeIsDark ? '#999999' : '#666666';
+  }
+
+  private primaryTextColor(): string {
+    return this.themeIsDark ? '#E5E5E5' : '#1A1A1A';
+  }
+
+  private naviIndicatorHeight(): number {
+    return this.bottomRectHeight;
+  }
+
+  // 玻璃光感材质层（复刻 ImmersionMaterialLayer：HdsTabs 空 TabContent + barFloatingStyle）
   @Builder
-  CardCell(icon: Resource, label: string, value: string, color: string) {
-    Column() {
-      Image(icon)
-        .width(28).height(28).fillColor(color).objectFit(ImageFit.Contain)
-      Text(label).fontSize(12).fontColor(ThemeColors.textSecondary).margin({ top: 8 })
-      Text(value).fontSize(15).fontWeight(FontWeight.Bold).fontColor(color).margin({ top: 4 })
-    }
-    .layoutWeight(1).padding({ top: 16, bottom: 16 })
-    .alignItems(HorizontalAlign.Center)
-  }
-
-  @Builder
-  ListItem(icon: Resource, label: string, onClick: () => void = () => { }) {
-    Row() {
-      Image(icon)
-        .width(20).height(20).fillColor(ThemeColors.textPrimary).objectFit(ImageFit.Contain)
-        .margin({ left: 16, right: 14 })
-      Text(label).fontSize(15).fontColor(ThemeColors.textPrimary).layoutWeight(1)
-      Text('›').fontSize(18).fontColor(ThemeColors.textSecondary).margin({ right: 16 })
-    }
-    .width('100%').height(50).alignItems(VerticalAlign.Center)
-    .onClick(onClick)
-  }
-
-  // 头像模块（复刻 Authenticator MeLoginCard 风格：圆形头像 + 姓名 + 学号）
-  @Builder
-  AvatarModule() {
-    Row() {
-      Stack() {
-        if (this.avatarUrl.length > 0) {
-          Image(this.avatarUrl)
-            .width(64).height(64).borderRadius(32)
-            .objectFit(ImageFit.Cover)
-            .onError(() => {
-              this.avatarLoadFailed = true;
-            })
-        }
-        if (this.avatarUrl.length === 0 || this.avatarLoadFailed) {
-          Stack() {
-            Circle()
-              .width(64).height(64).fill(this.themeIsDark() ? '#4A4A4A' : '#C7C7C7')
-            Circle()
-              .width(16).height(16).fill(this.themeIsDark() ? '#777777' : '#9F9F9F')
-              .position({ x: 24, y: 10 })
-            Ellipse()
-              .width(34).height(20).fill(this.themeIsDark() ? '#777777' : '#9F9F9F')
-              .position({ x: 15, y: 30 })
-          }
-          .width(64).height(64)
-        }
-      }
-      .width(64).height(64)
-      Column() {
-        Text(this.name.length > 0 ? this.name : '未登录')
-          .fontSize(18).fontWeight(FontWeight.Bold).fontColor(ThemeColors.textPrimary)
-        Text(this.account)
-          .fontSize(13).fontColor(ThemeColors.textSecondary).margin({ top: 4 })
-      }
-      .alignItems(HorizontalAlign.Start)
-      .margin({ left: 16 })
-      .layoutWeight(1)
-      Text('›').fontSize(22).fontColor(ThemeColors.textSecondary)
-    }
-    .width('100%')
-    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
-    .backgroundColor(MaterialConfig.shouldUseCardMaterial() ? Color.Transparent : ThemeColors.bgCard)
-    .borderRadius(16)
-    .onClick(() => { this.pageStack.pushPathByName('ProfileCenterPage', undefined); })
-  }
-
-  private themeIsDark(): boolean {
-    return AppStorage.get<boolean>('theme_is_dark') === true;
-  }
-
-  // 玻璃光感卡片容器：开启沉浸时用系统材质层，否则纯色卡片
-  @Builder
-  MaterialBar() {
+  ImmersionMaterialContent(cardHeight: number) {
     Stack()
       .width('100%')
-      .height(100)
+      .height(cardHeight)
       .backgroundColor(Color.Transparent)
       .hitTestBehavior(HitTestMode.None)
   }
 
   @Builder
-  ImmersionCard(cardHeight: Length, radius: number) {
-    Stack({ alignContent: Alignment.Top }) {
-      if (MaterialConfig.shouldUseCardMaterial()) {
+  ImmersionCardSurface(cardHeight: number, cardRadius: number) {
+    Stack({ alignContent: Alignment.Center }) {
+      if (this.shouldUseCardMaterial()) {
         HdsTabs() {
           TabContent() {
           }
           .backdropBlur(0)
-          .tabBar(this.MaterialBar())
+          .tabBar(this.ImmersionMaterialContent(cardHeight))
           .clip(false)
         }
         .width('100%')
@@ -183,51 +167,210 @@ export struct MineTab {
     }
     .width('100%')
     .height(cardHeight)
-    .borderRadius(radius)
+    .borderRadius(cardRadius)
     .clip(true)
-    .backgroundColor(MaterialConfig.shouldUseCardMaterial() ? Color.Transparent : ThemeColors.bgCard)
+    .backgroundColor(Color.Transparent)
     .hitTestBehavior(HitTestMode.None)
   }
 
+  // ===== 头像登录卡（复刻 MeLoginCard + MeAvatar）=====
+
+  @Builder
+  MeAvatar() {
+    if (this.avatarUrl.length > 0) {
+      Image(this.avatarUrl)
+        .width(ME_AVATAR_SIZE)
+        .height(ME_AVATAR_SIZE)
+        .borderRadius(ME_AVATAR_SIZE / 2)
+        .objectFit(ImageFit.Cover)
+        .onError(() => {
+          this.avatarLoadFailed = true;
+        })
+    } else {
+      Stack() {
+        Circle()
+          .width(ME_AVATAR_SIZE)
+          .height(ME_AVATAR_SIZE)
+          .fill(this.themeIsDark ? '#4A4A4A' : '#C7C7C7')
+        Circle()
+          .width(16)
+          .height(16)
+          .fill(this.themeIsDark ? '#777777' : '#9F9F9F')
+          .position({ x: 16, y: 10 })
+        Ellipse()
+          .width(34)
+          .height(20)
+          .fill(this.themeIsDark ? '#777777' : '#9F9F9F')
+          .position({ x: 7, y: 26 })
+      }
+      .width(ME_AVATAR_SIZE)
+      .height(ME_AVATAR_SIZE)
+    }
+  }
+
+  @Builder
+  MeLoginCard() {
+    Stack({ alignContent: Alignment.Center }) {
+      this.ImmersionCardSurface(ME_LOGIN_CARD_HEIGHT, ME_CARD_RADIUS)
+      Row({ space: ME_ACTION_CONTENT_GAP }) {
+        this.MeAvatar()
+        Column({ space: 4 }) {
+          Text(this.name.length > 0 ? this.name : '未登录')
+            .fontSize(ME_ACTION_TEXT_SIZE)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(this.primaryTextColor())
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+          Text(this.account)
+            .fontSize(14)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.secondaryTextColor())
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+      }
+      .width('100%')
+      .height(ME_LOGIN_CARD_HEIGHT)
+      .padding({ left: 18, right: 20 })
+      .alignItems(VerticalAlign.Center)
+      .zIndex(2)
+      .onClick(() => { this.pageStack.pushPathByName('ProfileCenterPage', undefined); })
+    }
+    .width('100%')
+    .height(ME_LOGIN_CARD_HEIGHT)
+    .borderRadius(ME_CARD_RADIUS)
+    .clip(true)
+    .backgroundColor(this.cardSurfaceBaseColor(this.cardBackgroundColor()))
+    .border({ width: this.cardSurfaceBorderWidth(), color: this.immersionBorderColor() })
+  }
+
+  // ===== 分类操作卡（复刻 MeActionCard + MeActionRow）=====
+
+  @Builder
+  MeCardDivider() {
+    Divider()
+      .strokeWidth(1)
+      .color(this.dividerColor())
+  }
+
+  @Builder
+  TrailingArrowSymbol() {
+    SymbolGlyph($r('sys.symbol.chevron_right'))
+      .fontSize(ME_ACTION_ICON_SIZE)
+      .fontColor([this.secondaryTextColor()])
+      .fontWeight(FontWeight.Medium)
+      .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+  }
+
+  @Builder
+  MeActionRow(label: string, icon: Resource, onClick: () => void) {
+    Row({ space: 16 }) {
+      SymbolGlyph(icon)
+        .fontSize(ME_ACTION_ICON_SIZE)
+        .fontColor([this.primaryTextColor()])
+        .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+      Text(label)
+        .fontSize(ME_ACTION_TEXT_SIZE)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(this.primaryTextColor())
+        .layoutWeight(1)
+      this.TrailingArrowSymbol()
+    }
+    .width('100%')
+    .height(ME_ROW_HEIGHT)
+    .alignItems(VerticalAlign.Center)
+    .onClick(onClick)
+  }
+
+  // 分类卡：items = [label, 图标, 点击动作]，用分隔线隔开
+  @Builder
+  MeActionCard(items: Array<ActionItem>) {
+    Stack({ alignContent: Alignment.Top }) {
+      this.ImmersionCardSurface(items.length * ME_ROW_HEIGHT + items.length - 1, ME_CARD_RADIUS)
+      Column() {
+        ForEach(items, (item: ActionItem, index: number) => {
+          this.MeActionRow(item.label, item.icon, item.onClick)
+          if (index < items.length - 1) {
+            this.MeCardDivider()
+          }
+        }, (item: ActionItem) => item.label)
+      }
+      .width('100%')
+      .height(items.length * ME_ROW_HEIGHT + items.length - 1)
+      .padding({ left: 20, right: 18 })
+      .zIndex(2)
+    }
+    .width('100%')
+    .height(items.length * ME_ROW_HEIGHT + items.length - 1)
+    .borderRadius(ME_CARD_RADIUS)
+    .clip(true)
+    .backgroundColor(this.cardSurfaceBaseColor(this.cardBackgroundColor()))
+    .border({ width: this.cardSurfaceBorderWidth(), color: this.immersionBorderColor() })
+  }
+
   build() {
-    Scroll() {
-      Column({ space: 12 }) {
-        // 头像模块（玻璃卡片）
-        Stack({ alignContent: Alignment.Top }) {
-          this.ImmersionCard(104, 16)
-          this.AvatarModule()
+    Stack() {
+      WaterFlow({ scroller: this.meScroller }) {
+        FlowItem() {
+          this.MeLoginCard()
         }
         .width('100%')
 
-        // 一卡通/邮箱/图书 模块（玻璃卡片）
-        Stack({ alignContent: Alignment.Top }) {
-          this.ImmersionCard(92, 16)
-          Row() {
-            this.CardCell($r('app.media.ic_wallet'), '一卡通余额', this.cardBalance, '#E53935')
-            this.CardCell($r('app.media.ic_mail'), '我的邮箱', this.emailCount + '封', '#1565C0')
-            this.CardCell($r('app.media.ic_library'), '图书借阅', this.bookCount + '本', '#1565C0')
-          }
-          .width('100%')
-          .padding({ left: 8, right: 8 })
+        FlowItem() {
+          this.MeActionCard([
+            new ActionItem('一卡通余额', $r('sys.symbol.wallet'), () => {
+              this.pageStack.pushPathByName('ProfileCenterPage', undefined);
+            }),
+            new ActionItem('我的邮箱', $r('sys.symbol.envelope'), () => {
+              this.openH5('我的邮箱');
+            }),
+            new ActionItem('图书借阅', $r('sys.symbol.book'), () => {
+              this.openH5('图书借阅');
+            })
+          ])
         }
         .width('100%')
 
-        // 设置模块（玻璃卡片）
-        Stack({ alignContent: Alignment.Top }) {
-          this.ImmersionCard(58, 16)
-          Column() {
-            this.ListItem($r('app.media.ic_settings'), '设置', () => { this.pageStack.pushPathByName('SettingsPage', undefined); })
-          }
-          .width('100%')
-          .padding({ top: 4, bottom: 4 })
+        FlowItem() {
+          this.MeActionCard([
+            new ActionItem('外观与主题', $r('sys.symbol.paintpalette'), () => {
+              this.pageStack.pushPathByName('AppearancePage', undefined);
+            }),
+            new ActionItem('设置', $r('sys.symbol.gearshape'), () => {
+              this.pageStack.pushPathByName('SettingsPage', undefined);
+            })
+          ])
         }
         .width('100%')
       }
       .width('100%')
-      .padding({ left: 12, right: 12, top: this.statusBarHeight + 56, bottom: 24 })
+      .height('100%')
+      .padding({ left: HOME_HORIZONTAL_PADDING, right: HOME_HORIZONTAL_PADDING })
+      .contentStartOffset(this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP)
+      .contentEndOffset(this.naviIndicatorHeight() + 50 + PAGE_CARD_GAP)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+      .scrollBar(BarState.Off)
+      .clip(false)
     }
-    .width('100%').height('100%')
-    .scrollBar(BarState.Off)
-    .backgroundColor($r('sys.color.ohos_id_color_background'))
+    .width('100%')
+    .height('100%')
+    .backgroundColor(this.pageBackgroundColor())
+  }
+
+  private openH5(title: string): void {
+    this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(title, 'https://i.sqgxy.edu.cn/h5/'));
+  }
+}
+
+// 分类卡条目
+class ActionItem {
+  label: string = '';
+  icon: Resource = $r('sys.symbol.gearshape');
+  onClick: () => void = () => { };
+
+  constructor(label: string, icon: Resource, onClick: () => void) {
+    this.label = label;
+    this.icon = icon;
+    this.onClick = onClick;
   }
 }
