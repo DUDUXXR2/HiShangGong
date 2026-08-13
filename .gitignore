@@ -1,0 +1,7 @@
+.idea/
+.hvigor/
+build/
+oh_modules/
+node_modules/
+*.hap
+*.log

@@ -1,0 +1,18 @@
+{
+  "network-security-config": {
+    "base-config": {
+      "cleartextTrafficPermitted": false
+    },
+    "domain-config": [
+      {
+        "domains": [
+          {
+            "name": "sqgxy.edu.cn",
+            "subdomains": true
+          }
+        ],
+        "cleartextTrafficPermitted": true
+      }
+    ]
+  }
+}
