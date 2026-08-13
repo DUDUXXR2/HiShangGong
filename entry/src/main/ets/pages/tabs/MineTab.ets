@@ -1,5 +1,6 @@
-// MineTab.ets — 我的页（完整复刻 Authenticator-main MePageContent 结构）
-// 结构：WaterFlow 卡片流 = 头像登录卡 + 分类操作卡；卡片用 ImmersionCardSurface 玻璃光感层
+// MineTab.ets — 我的页（完整复刻 Authenticator-main MePageContent）
+// 结构完全照抄：WaterFlow 卡片流 = 头像卡 + 分类操作卡；ImmersionCardSurface 玻璃光感；
+// 按压 scale 动画、边框、分隔线、深浅色全部与开源器一致。仅数据源替换为云上商工。
 import { ThemeColors } from '../../utils/ThemeColors';
 import { PreferenceUtil } from '../../utils/PreferenceUtil';
 import { SqgService } from '../../services/SqgService';
@@ -9,10 +10,13 @@ import { HdsTabs } from '@kit.UIDesignKit';
 
 const TAG = 'MineTab';
 
-// 复刻 Authenticator 的布局常量
+// ===== 复刻 Authenticator 常量 =====
 const HOME_HORIZONTAL_PADDING: number = 20;
 const PAGE_CARD_GAP: number = 10;
 const HOME_TITLE_HEIGHT: number = 56;
+const HOME_NAV_HEIGHT: number = 52;
+const CARD_PRESS_ANIMATION_DURATION: number = 160;
+const CARD_PRESSED_SCALE: number = 0.97;
 const ME_CARD_RADIUS: number = 15;
 const ME_LOGIN_CARD_HEIGHT: number = 75;
 const ME_ROW_HEIGHT: number = 60;
@@ -34,6 +38,7 @@ export struct MineTab {
   @State bookCount: string = '--';
   @State avatarUrl: string = '';
   @State avatarLoadFailed: boolean = false;
+  @State pressedCardId: string = '';
   private meScroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
@@ -77,7 +82,9 @@ export struct MineTab {
     }
   }
 
-  private isDarkTheme(): boolean {
+  // ===== 复刻 Authenticator 颜色/材质支撑 =====
+
+  private isDark(): boolean {
     return this.themeIsDark;
   }
 
@@ -85,7 +92,17 @@ export struct MineTab {
     return this.themeIsDark ? '#000000' : '#F2F3F5';
   }
 
-  // ===== 复刻 Authenticator 卡片支撑方法 =====
+  private primaryTextColor(): string {
+    return this.themeIsDark ? '#E5E5E5' : '#1A1A1A';
+  }
+
+  private secondaryTextColor(): string {
+    return this.themeIsDark ? '#999999' : '#666666';
+  }
+
+  private dividerColor(): string {
+    return this.themeIsDark ? '#444444' : '#E6E6E6';
+  }
 
   private shouldUseCardMaterial(): boolean {
     return MaterialConfig.shouldUseCardMaterial();
@@ -107,23 +124,24 @@ export struct MineTab {
     return this.shouldUseCardMaterial() ? 0.5 : 0;
   }
 
-  private dividerColor(): string {
-    return this.themeIsDark ? '#444444' : '#E6E6E6';
-  }
-
-  private secondaryTextColor(): string {
-    return this.themeIsDark ? '#999999' : '#666666';
-  }
-
-  private primaryTextColor(): string {
-    return this.themeIsDark ? '#E5E5E5' : '#1A1A1A';
-  }
-
   private naviIndicatorHeight(): number {
     return this.bottomRectHeight;
   }
 
-  // 玻璃光感材质层（复刻 ImmersionMaterialLayer：HdsTabs 空 TabContent + barFloatingStyle）
+  private appCardScale(cardId: string): number {
+    return this.pressedCardId === cardId ? CARD_PRESSED_SCALE : 1;
+  }
+
+  private handleAppCardTouch(cardId: string, type: TouchType): void {
+    if (type === TouchType.Down) {
+      this.pressedCardId = cardId;
+    } else if ((type === TouchType.Up || type === TouchType.Cancel) && this.pressedCardId === cardId) {
+      this.pressedCardId = '';
+    }
+  }
+
+  // ===== 玻璃光感材质层（复刻 ImmersionMaterialLayer）=====
+
   @Builder
   ImmersionMaterialContent(cardHeight: number) {
     Stack()
@@ -173,7 +191,7 @@ export struct MineTab {
     .hitTestBehavior(HitTestMode.None)
   }
 
-  // ===== 头像登录卡（复刻 MeLoginCard + MeAvatar）=====
+  // ===== 头像卡（复刻 MeLoginCard + MeAvatar）=====
 
   @Builder
   MeAvatar() {
@@ -242,6 +260,11 @@ export struct MineTab {
     .clip(true)
     .backgroundColor(this.cardSurfaceBaseColor(this.cardBackgroundColor()))
     .border({ width: this.cardSurfaceBorderWidth(), color: this.immersionBorderColor() })
+    .scale({ x: this.appCardScale('me-login'), y: this.appCardScale('me-login') })
+    .animation({ duration: CARD_PRESS_ANIMATION_DURATION, curve: Curve.Friction })
+    .onTouch((event: TouchEvent) => {
+      this.handleAppCardTouch('me-login', event.type);
+    })
   }
 
   // ===== 分类操作卡（复刻 MeActionCard + MeActionRow）=====
@@ -282,9 +305,8 @@ export struct MineTab {
     .onClick(onClick)
   }
 
-  // 分类卡：items = [label, 图标, 点击动作]，用分隔线隔开
   @Builder
-  MeActionCard(items: Array<ActionItem>) {
+  MeActionCard(items: Array<ActionItem>, cardId: string) {
     Stack({ alignContent: Alignment.Top }) {
       this.ImmersionCardSurface(items.length * ME_ROW_HEIGHT + items.length - 1, ME_CARD_RADIUS)
       Column() {
@@ -306,6 +328,11 @@ export struct MineTab {
     .clip(true)
     .backgroundColor(this.cardSurfaceBaseColor(this.cardBackgroundColor()))
     .border({ width: this.cardSurfaceBorderWidth(), color: this.immersionBorderColor() })
+    .scale({ x: this.appCardScale(cardId), y: this.appCardScale(cardId) })
+    .animation({ duration: CARD_PRESS_ANIMATION_DURATION, curve: Curve.Friction })
+    .onTouch((event: TouchEvent) => {
+      this.handleAppCardTouch(cardId, event.type);
+    })
   }
 
   build() {
@@ -327,7 +354,7 @@ export struct MineTab {
             new ActionItem('图书借阅', $r('sys.symbol.book'), () => {
               this.openH5('图书借阅');
             })
-          ])
+          ], 'me-cards')
         }
         .width('100%')
 
@@ -339,7 +366,7 @@ export struct MineTab {
             new ActionItem('设置', $r('sys.symbol.gearshape'), () => {
               this.pageStack.pushPathByName('SettingsPage', undefined);
             })
-          ])
+          ], 'me-settings')
         }
         .width('100%')
       }
@@ -347,7 +374,7 @@ export struct MineTab {
       .height('100%')
       .padding({ left: HOME_HORIZONTAL_PADDING, right: HOME_HORIZONTAL_PADDING })
       .contentStartOffset(this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP)
-      .contentEndOffset(this.naviIndicatorHeight() + 50 + PAGE_CARD_GAP)
+      .contentEndOffset(this.naviIndicatorHeight() + HOME_NAV_HEIGHT + PAGE_CARD_GAP)
       .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
       .scrollBar(BarState.Off)
       .clip(false)
