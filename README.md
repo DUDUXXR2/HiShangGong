@@ -57,6 +57,12 @@ privacy_consent_dialog/ 隐私同意弹窗组件（华为官方 HAR）
    `File → Project Structure → Signing Configs` 中配置你自己的签名，或替换对应字段。
 3. 连接真机 / 模拟器后运行；登录需真实学号密码（商丘工学院）。
 
+## 下载 / 安装
+
+- **Release 签名 HAP**（AGC 分发用）：[HiShangGong_v1.0.0.hap](https://github.com/DUDUXXR2/HiShangGong/releases/download/v1.0.0/HiShangGong_1.0.0.hap)
+  > 该包使用 AGC 发布证书签名，直接安装需设备已授权；普通安装请按上方「构建 / 运行」自行配置签名编译，或通过华为 AGC 邀请测试安装。
+- **AGC 邀请测试**：正式测试版本通过华为应用市场测试分发（审核通过后提供测试链接）。
+
 ## 已知问题
 
 部分 H5 功能页（如**成绩查询**、**课表查询**）由学校教务系统独立维护会话，与本应用的登录态相互独立，因此：
