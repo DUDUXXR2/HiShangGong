@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="384" height="384" viewBox="0 0 384 384">
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5AB9F6"/>
+      <stop offset="1" stop-color="#48AEEA"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#25C36A"/>
+      <stop offset="1" stop-color="#18B965"/>
+    </linearGradient>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- clean white canvas -->
+  <rect width="384" height="384" fill="#FFFFFF"/>
+
+  <!-- main blue rounded body -->
+  <rect x="48" y="68" width="263" height="294" rx="21" fill="url(#blue)"/>
+
+  <!-- top handle -->
+  <rect x="118.5" y="52.5" width="126" height="45" rx="10" fill="#FFFFFF"/>
+  <rect x="126" y="54" width="112" height="36" rx="8" fill="url(#blue)"/>
+
+  <!-- central campus/building symbol -->
+  <g fill="#FFFFFF">
+    <!-- tower cap -->
+    <path d="M139 126 H164.5 Q166.5 126 166.5 128.5 V137.5 Q166.5 140 164 140 H149 V160.5 L168 175 V198.5 H115 V167 L139 149.5 Z"/>
+    <!-- building body -->
+    <path d="M115 166.5 L141.5 147.5 L168 166.5 V199 H191.5 Q197 199 197 204.5 V245.5 H156 V231
+             Q156 220 143.5 219 Q131 220 131 231 V251 H91 Q85.5 251 85.5 245.5 V204.5 Q85.5 199 91 199 H115 Z"/>
+    <!-- circular window -->
+    <circle cx="141.5" cy="180.5" r="11" fill="#52B5F0"/>
+  </g>
+
+  <!-- directional arrows -->
+  <g fill="#FFFFFF">
+    <!-- left arrow -->
+    <path d="M217 166 H228.5 V152.5 Q228.5 147.5 232.5 147.5 Q234.5 147.5 237 150
+             L254 166 H268 Q275 166 275 172.5 Q275 179 268 179 H254 L237 195 Q233.5 198 230.5 196
+             Q228.5 194 228.5 190 V181 H217 Q212 181 212 175.5 Q212 170.5 217 166 Z"/>
+    <!-- right arrow -->
+    <path d="M218 226 H250 V212 Q250 207 254 207 Q256 207 259 210 L274 225
+             Q278 229 274 233 L259 248 Q256 251 253 249 Q250 247 250 243 V236 H218 Q213 236 213 231 Q213 226 218 226 Z"/>
+    <!-- bottom-left arrow/road mark -->
+    <path d="M95 303 H132 V314 H95 Q85 314 85 308.5 Q85 303 95 303 Z"/>
+  </g>
+
+  <!-- green campus label with white outline -->
+  <rect x="128" y="242" width="208" height="126" rx="63" fill="#FFFFFF"/>
+  <rect x="135" y="249" width="199" height="112" rx="56" fill="url(#green)"/>
+
+  <!-- Chinese lettering converted to glyph outlines -->
+  <g fill="#FFFFFF" aria-label="校内">
+    <path d="M533 597C498 527 434 442 368 388C385 377 409 357 421 343C488 402 555 487 601 567ZM719 563C785 499 859 409 892 349L948 395C914 453 837 540 771 603ZM574 819C605 782 638 729 653 693H400V623H949V693H658L721 723C706 758 671 808 637 846ZM760 421C739 341 705 270 660 207C611 269 572 340 545 417L479 399C512 306 557 221 613 149C547 78 463 20 361 -24C377 -37 399 -65 409 -81C510 -36 594 22 661 93C731 20 815 -37 914 -74C926 -53 948 -22 966 -7C866 25 780 80 710 151C765 223 805 307 833 403ZM193 840V628H63V558H180C151 421 91 260 30 176C43 158 62 125 69 105C115 174 160 289 193 406V-79H262V420C290 366 322 299 336 264L381 321C363 352 286 485 262 517V558H375V628H262V840Z" transform="translate(155.00,340.00) scale(0.070000,-0.070000)"/>
+    <path d="M99 669V-82H173V595H462C457 463 420 298 199 179C217 166 242 138 253 122C388 201 460 296 498 392C590 307 691 203 742 135L804 184C742 259 620 376 521 464C531 509 536 553 538 595H829V20C829 2 824 -4 804 -5C784 -5 716 -6 645 -3C656 -24 668 -58 671 -79C761 -79 823 -79 858 -67C892 -54 903 -30 903 19V669H539V840H463V669Z" transform="translate(225.00,340.00) scale(0.070000,-0.070000)"/>
+  </g>
+</svg>

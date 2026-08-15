@@ -1,0 +1,71 @@
+{
+  "app": {
+    // 签名配置：开源仓库不含真实签名凭据。
+    // 本地构建请用 DevEco Studio 重新配置（File → Project Structure → Signing Configs）
+    // 或替换下方 certpath / keyPassword / profile / storeFile / storePassword 为你的签名信息。
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "REPLACE_WITH_YOUR_CERT_PATH",
+          "keyAlias": "debugKey",
+          "keyPassword": "REPLACE_WITH_YOUR_KEY_PASSWORD",
+          "profile": "REPLACE_WITH_YOUR_PROFILE_PATH",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "REPLACE_WITH_YOUR_STORE_FILE_PATH",
+          "storePassword": "REPLACE_WITH_YOUR_STORE_PASSWORD"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "6.1.0(23)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        },
+        "targetSdkVersion": "26.0.0"
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug"
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "privacy_consent_dialog",
+      "srcPath": "./privacy_consent_dialog",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}

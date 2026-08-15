@@ -1,0 +1,27 @@
+# IDE / 构建产物
+.idea/
+.hvigor/
+build/
+oh_modules/
+node_modules/
+*.hap
+*.log
+
+# Claude Code 本地配置（不进仓库）
+.claude/
+
+# 调试临时文件
+.home*.png
+.home*.jpeg
+.home_b64.txt
+.mine.png
+.top.png
+h.jpeg
+hs_err_pid*.log
+
+# 本机签名/密钥（不得提交）
+*.p12
+*.p7b
+*.cer
+*.jks
+*.keystore
