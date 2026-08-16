@@ -8,6 +8,11 @@ import { deviceInfo } from '@kit.BasicServicesKit';
 /** 是否运行在支持系统材质（uiMaterial）的版本上；稳定版恒为 false，统一走回退 */
 export const IS_MATERIAL_API: boolean = deviceInfo.distributionOSApiVersion >= 260000;
 
+/** 运行环境是否支持 uiMaterial 沉浸材质（需 API 26+）。用 sdkApiVersion 判断，避免 distributionOSApiVersion 在 6.1 上的误判 */
+export function immersiveMaterialSupported(): boolean {
+  return (deviceInfo.sdkApiVersion as number) >= 26;
+}
+
 /**
  * Toast / Tips 用的系统沉浸材质。稳定版返回 undefined，调用方据此不设置 systemMaterial 字段。
  */

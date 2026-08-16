@@ -3,7 +3,7 @@ import { PreferenceUtil } from './PreferenceUtil';
 
 // 预设主题色：[浅色模式颜色, 深色模式颜色, 名称]
 export const ACCENT_PRESETS: string[][] = [
-  ['#2979FF', '#6699DD', '西电蓝'],
+  ['#2979FF', '#6699DD', '商工蓝'],
   ['#1565C0', '#5599CC', '深海蓝'],
   ['#00ACC1', '#55B8C4', '青碧'],
   ['#00897B', '#55AA99', '墨绿'],
@@ -30,17 +30,9 @@ const CUSTOM_KEY = 'accent_custom';
 
 export class AccentColors {
   // 初始化（应用启动时调用一次）
+  // 外观页已移除主题色选择，强调色固定为默认「商工蓝」预设（index 0，浅色 #2979FF / 深色 #6699DD）
   static init(): void {
-    AccentColors.migrateOrderV2();
-    const custom: string = PreferenceUtil.getString(CUSTOM_KEY);
-    if (custom.length === 7 && custom.startsWith('#')) {
-      AppStorage.setOrCreate('accent_color', custom);
-      AppStorage.setOrCreate('accent_index', -1);
-      return;
-    }
-    const saved: number = PreferenceUtil.getNumber(KEY, 0);
-    const idx: number = (saved >= 0 && saved < ACCENT_PRESETS.length) ? saved : 0;
-    AccentColors.apply(idx);
+    AccentColors.apply(0);
   }
 
   /**
@@ -124,6 +116,6 @@ export class AccentColors {
   static get currentName(): string {
     const idx: number = AppStorage.get('accent_index') as number ?? 0;
     if (idx === -1) return '自定义';
-    return ACCENT_PRESETS[idx]?.[2] ?? '西电蓝';
+    return ACCENT_PRESETS[idx]?.[2] ?? '商工蓝';
   }
 }

@@ -17,7 +17,7 @@ export interface CacheConfig {
 export class CacheService {
   private static instance: CacheService;
   private ready = false;
-  private baseDir = '/data/storage/el2/base/haps/hixd_cache';
+  private baseDir = '/data/storage/el2/base/haps/yssg_cache';
 
   private constructor() {}
 

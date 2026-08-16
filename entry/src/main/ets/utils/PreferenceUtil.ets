@@ -9,7 +9,7 @@ import { util } from '@kit.ArkTS';
 type ValueType = string | number | boolean;
 
 const TAG = 'PreferenceUtil';
-const STORE_NAME = 'hixd_prefs';
+const STORE_NAME = 'yssg_prefs';
 
 let prefsInstance: dataPreferences.Preferences | null = null;
 let sFilesDir: string = '';  // 共享文件目录（主应用/卡片进程均可访问）

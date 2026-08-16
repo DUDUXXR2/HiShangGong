@@ -1,80 +1,119 @@
-// SettingsPage.ets — 设置页：外观与主题 / 账号与安全 / 退出登录
-// NavDestination 子页：系统标题栏自动处理状态栏安全区，原生返回键（单箭头无字）
 import { router } from '@kit.ArkUI';
-import { ThemeColors } from '../utils/ThemeColors';
-import { PreferenceUtil } from '../utils/PreferenceUtil';
+import { HdsNavigation, HdsNavigationTitleMode, ScrollEffectType, BlurStrategy } from '@kit.UIDesignKit';
 import { SqgService } from '../services/SqgService';
+import { ThemeColors } from '../utils/ThemeColors';
+import { BackgroundManager, BackgroundLayer } from '../utils/BackgroundManager';
+import { MaterialConfig } from '../utils/MaterialConfig';
+import { SettingRowCard } from '../components/SettingRowCard';
+import { GlassCard } from '../components/GlassCard';
 
 const TAG = 'SettingsPage';
+
+const HOME_TITLE_HEIGHT: number = 56;
+const PAGE_CARD_GAP: number = 10;
+const HOME_HORIZONTAL_PADDING: number = 20;
 
 @Component
 export struct SettingsPage {
   @Consume('pageStack') pageStack: NavPathStack;
+  @StorageLink('theme_is_dark') themeIsDark: boolean = false;
+  @StorageProp('statusBarHeight') statusBarHeight: number = 0;
 
-  private logout(): void {
-    SqgService.getInstance().clearUserData().catch(() => {
-    });
-    PreferenceUtil.putBool('is_logged_in', false);
-    router.replaceUrl({ url: 'pages/login/LoginPage' });
+  private async logout(): Promise<void> {
+    try {
+      await SqgService.getInstance().logout();
+    } catch (e) {
+    }
+    try {
+      router.replaceUrl({ url: 'pages/login/LoginPage' });
+    } catch (e) {
+    }
   }
 
   private openAccountSecurity(): void {
     this.pageStack.pushPathByName('AccountSecurityPage', undefined);
   }
 
-  private openAppearance(): void {
-    this.pageStack.pushPathByName('AppearancePage', undefined);
+  private openDeclaration(): void {
+    this.pageStack.pushPathByName('DeclarationPage', undefined);
   }
 
   @Builder
-  ListItem(icon: Resource, label: string, onClick: () => void) {
+  LogoutCardContent() {
     Row() {
-      Image(icon)
-        .width(20).height(20).fillColor(ThemeColors.textPrimary).objectFit(ImageFit.Contain)
-        .margin({ left: 16, right: 14 })
-      Text(label).fontSize(15).fontColor(ThemeColors.textPrimary).layoutWeight(1)
-      Text('›').fontSize(18).fontColor(ThemeColors.textSecondary).margin({ right: 16 })
+      Text('退出登录')
+        .fontSize(15)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(ThemeColors.accent)
+        .layoutWeight(1)
+        .textAlign(TextAlign.Center)
     }
-    .width('100%').height(52).alignItems(VerticalAlign.Center)
-    .onClick(onClick)
+    .width('100%')
+    .height(48)
+    .alignItems(VerticalAlign.Center)
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => { this.logout(); })
   }
 
   build() {
     NavDestination() {
-      Scroll() {
-        Column() {
-          // 外观与主题入口
-          Column() {
-            this.ListItem($r('app.media.ic_public_rotate_switch'), '外观与主题', () => { this.openAppearance(); })
-          }
-          .width('100%').backgroundColor(ThemeColors.bgCard).borderRadius(16)
-          .margin({ top: 12, left: 12, right: 12 })
-          .padding({ top: 4, bottom: 4 })
+      Stack({ alignContent: Alignment.Top }) {
+        BackgroundLayer()
+        HdsNavigation() {
+          Scroll() {
+            Column({ space: PAGE_CARD_GAP }) {
+              SettingRowCard({
+                icon: $r('app.media.ic_lock'),
+                label: '账号与安全',
+                action: () => { this.openAccountSecurity(); }
+              })
 
-          // 账号与安全模块
-          Column() {
-            this.ListItem($r('app.media.ic_lock'), '账号与安全', () => { this.openAccountSecurity(); })
-          }
-          .width('100%').backgroundColor(ThemeColors.bgCard).borderRadius(16)
-          .margin({ top: 12, left: 12, right: 12 })
-          .padding({ top: 4, bottom: 4 })
+              SettingRowCard({
+                icon: $r('app.media.ic_document'),
+                label: '软件声明',
+                action: () => { this.openDeclaration(); }
+              })
 
-          Blank().height(24)
-          Button('退出登录')
-            .fontSize(14).fontColor('#E53935')
-            .width('88%').height(46)
-            .backgroundColor(ThemeColors.bgCard).borderRadius(23)
-            .margin({ bottom: 24 })
-            .onClick(() => this.logout())
+              GlassCard({ cardHeight: 48, cardRadius: 24 }) {
+                this.LogoutCardContent()
+              }
+            }
+            .width('100%')
+            .padding({ left: HOME_HORIZONTAL_PADDING, right: HOME_HORIZONTAL_PADDING, top: PAGE_CARD_GAP })
+          }
+          .width('100%').height('100%')
+          .align(Alignment.Top)
+          .scrollBar(BarState.Off)
+          .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+          .contentStartOffset(this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP)
         }
-        .width('100%')
+        .mode(NavigationMode.Stack)
+        .titleBar({
+          content: {
+            title: { mainTitle: '设置' },
+            backIcon: { action: (): void => { this.pageStack.pop(); } }
+          },
+          style: {
+            scrollEffectOpts: {
+              enableScrollEffect: false,
+              scrollEffectType: ScrollEffectType.GRADIENT_BLUR
+            },
+            blurStrategy: BlurStrategy.ADAPTIVE,
+            originalStyle: { backgroundStyle: { backgroundColor: '#00ffffff' } },
+            scrollEffectStyle: { backgroundStyle: { backgroundColor: '#00ffffff' } },
+            systemMaterialEffect: MaterialConfig.systemMaterialEffectParams()
+          },
+          avoidLayoutSafeArea: true,
+          enableComponentSafeArea: false
+        })
+        .hideBackButton(false)
+        .titleMode(HdsNavigationTitleMode.MINI)
+        .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP])
+        .width('100%').height('100%')
       }
       .width('100%').height('100%')
-      .scrollBar(BarState.Off)
-      .backgroundColor(ThemeColors.bgPage)
     }
-    .title('设置')
-    .backgroundColor(ThemeColors.bgPage)
-    .hideTitleBar(false)
+    .hideTitleBar(true)
+    .backgroundColor(BackgroundManager.pageBackgroundColor(this.themeIsDark))
   }
 }

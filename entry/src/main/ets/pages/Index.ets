@@ -11,9 +11,12 @@ import { PrivacyConsentController, PrivacyDocument, TextType } from 'privacy_con
 import { ThemeColors } from '../utils/ThemeColors';
 import { AccentColors } from '../utils/AccentColors';
 import { PreferenceUtil } from '../utils/PreferenceUtil';
+import { BackgroundManager } from '../utils/BackgroundManager';
+import { MaterialConfig } from '../utils/MaterialConfig';
+import { ThemeConfig } from '../utils/ThemeConfig';
 
 // 隐私政策版本号：文案有重大变更时 +1，自动重新弹窗征得同意
-const PRIVACY_POLICY_VERSION: number = 1;
+const PRIVACY_POLICY_VERSION: number = 2;
 
 
 @Entry
@@ -24,11 +27,17 @@ struct Index {
   private controller: PrivacyConsentController = new PrivacyConsentController(this.getUIContext());
 
   aboutToAppear(): void {
-    // 主题/强调色提前初始化（主页与登录页都依赖）
+    // 主题/强调色/壁纸提前初始化（主页与登录页都依赖）
     const savedMode: number = PreferenceUtil.getNumber('theme_color_mode',
       ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
     ThemeColors.init(savedMode, getContext(this));
     AccentColors.init();
+    BackgroundManager.init();
+    MaterialConfig.init();
+    const fontScale: number = ThemeConfig.fontSizeScale();
+    AppStorage.setOrCreate<number>('font_size_scale', fontScale);
+    const abilityCtx: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
+    abilityCtx.getApplicationContext().setFontSizeScale(fontScale);
     this.accentColor = (AppStorage.get('accent_color') as string) ?? '#2979FF';
     this.checkPrivacyAgreement();
   }
@@ -55,7 +64,7 @@ struct Index {
   // 拉起官方全屏隐私同意弹窗
   private showConsent(): void {
     const doc: PrivacyDocument = [
-      { text: '欢迎使用云上商工！在使用本应用前，请您仔细阅读并同意', type: TextType.PLAIN },
+      { text: '欢迎使用Hi商工！在使用本应用前，请您仔细阅读并同意', type: TextType.PLAIN },
       {
         text: '《用户协议》',
         type: TextType.ACTION,
@@ -73,13 +82,21 @@ struct Index {
         type: TextType.PLAIN
       },
       {
-        text: '\n\n本应用为校园服务工具，数据均来自学校官方平台，仅供个人日常使用。',
+        text: '\n\n本应用为个人开发者制作的第三方校园工具，从安卓版移植到鸿蒙系统，非学校官方应用。开发过程中使用了 DeepSeek v4、GLM-5.1 与 Claude Code 等 AI 工具辅助编码。',
+        type: TextType.PLAIN
+      },
+      {
+        text: '\n应用内缴费、充值等操作均为跳转至学校官方页面完成支付，本应用不直接收款，也不存储支付信息。',
+        type: TextType.PLAIN
+      },
+      {
+        text: '\n您的数据均来自学校官方接口，不存储到开发者服务器；本地缓存仅保存在设备本地。',
         type: TextType.PLAIN
       }
     ];
     this.controller
       .setAppIcon($r('app.media.icon'))
-      .setAppName('云上商工')
+      .setAppName('Hi商工')
       .setAppDescription('校园信息查询')
       .setTitle('用户协议与隐私政策')
       .setDocument(doc)
@@ -115,7 +132,7 @@ struct Index {
     // 启动页背景（始终渲染，作为弹窗的底）
     Column() {
       LoadingProgress().width(48).height(48).color(this.accentColor)
-      Text('云上商工').fontSize(24).fontWeight(FontWeight.Bold).fontColor(this.accentColor).margin({ top: 16 })
+      Text('Hi商工').fontSize(24).fontWeight(FontWeight.Bold).fontColor(this.accentColor).margin({ top: 16 })
     }
     .width('100%').height('100%')
     .justifyContent(FlexAlign.Center)

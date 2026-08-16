@@ -2,8 +2,18 @@ import { uiMaterial } from '@kit.ArkUI';
 import { ThemeColors } from '../../utils/ThemeColors';
 import { SqgService } from '../../services/SqgService';
 import { WebPageParam } from '../NavParams';
+import { localIconRes, isColoredIcon } from '../../utils/ServiceIcons';
+import { CloudIconStore } from '../../utils/CloudIcons';
+import { immersiveMaterialSupported } from '../../utils/MaterialKit';
+import { GlassCard } from '../../components/GlassCard';
 
 const TAG = 'ServiceTab';
+
+const HOME_TITLE_HEIGHT: number = 56;
+const PAGE_CARD_GAP: number = 10;
+const HOME_HORIZONTAL_PADDING: number = 20;
+const SEARCH_BAR_HEIGHT: number = 44;
+const HOME_NAV_HEIGHT: number = 52;
 
 class ServiceItem {
   name: string = '';
@@ -18,16 +28,6 @@ class ServiceGroup {
   services: ServiceItem[] = [];
 }
 
-class LocalIcon {
-  icon: Resource = $r('app.media.ic_public_more');
-  colored: boolean = false;
-
-  constructor(icon: Resource, colored: boolean) {
-    this.icon = icon;
-    this.colored = colored;
-  }
-}
-
 @Component
 export struct ServiceTab {
   @Consume('pageStack') pageStack: NavPathStack;
@@ -38,7 +38,10 @@ export struct ServiceTab {
   @State searchText: string = '';
   @State searchResults: ServiceItem[] = [];
   @State isSearching: boolean = false;
+  @State gridCols: number = 5;
+  @State failedIconUrls: string[] = [];
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
+  @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
   @Prop @Watch('onFocusSignalChange') searchFocusSignal: number = 0;
   private searchInputController: TextInputController = new TextInputController();
   private scroller: Scroller = new Scroller();
@@ -113,6 +116,7 @@ export struct ServiceTab {
     this.loading = true;
     this.loadError = '';
     try {
+      await CloudIconStore.load();
       const list = await SqgService.getInstance().getServiceList();
       this.groups = this.parseGroups(list);
     } catch (e) {
@@ -147,7 +151,7 @@ export struct ServiceTab {
     const low: string = kw.toLowerCase();
     for (let i = 0; i < all.length; i++) {
       const it: ServiceItem = all[i];
-      if (it.name.toLowerCase().indexOf(low) >= 0 || it.url.toLowerCase().indexOf(low) >= 0) {
+      if (it.name.toLowerCase().indexOf(low) >= 0) {
         hits.push(it);
       }
     }
@@ -198,76 +202,77 @@ export struct ServiceTab {
     return colors[index % colors.length];
   }
 
-  private localIconFor(name: string): LocalIcon | undefined {
-    const map: Record<string, LocalIcon> = {
-      '节假日离返校': new LocalIcon($r('app.media.holiday'), true),
-      '节假日': new LocalIcon($r('app.media.holiday'), true),
-      '离返校': new LocalIcon($r('app.media.holiday'), true),
-      '扫一扫': new LocalIcon($r('app.media.ic_public_scan_filled'), false),
-      '日程': new LocalIcon($r('app.media.ic_public_calendar'), false),
-      '缴电费': new LocalIcon($r('app.media.ic_bolt'), false),
-      '校园卡': new LocalIcon($r('app.media.ic_card'), false),
-      '影吧预约': new LocalIcon($r('app.media.ic_movie'), false),
-      '学生课表查询': new LocalIcon($r('app.media.ic_book'), false),
-      '日常劳动上报': new LocalIcon($r('app.media.ic_broom'), false),
-      '人脸采集': new LocalIcon($r('app.media.ic_face'), false)
-    };
-    for (const key of Object.keys(map)) {
-      if (name.indexOf(key) >= 0) {
-        return map[key];
-      }
+  // 断点自适应列数：手机 5 / 平板 7 / 2in1 10 / 大屏 12
+  private colsForWidth(width: number): number {
+    if (width < 600) {
+      return 5;
     }
-    return undefined;
+    if (width < 840) {
+      return 7;
+    }
+    if (width < 1280) {
+      return 10;
+    }
+    return 12;
   }
 
-  private localIconRes(name: string): Resource | undefined {
-    const li = this.localIconFor(name);
-    return li === undefined ? undefined : li.icon;
+  private gridTemplate(cols: number): string {
+    let tpl: string = '';
+    for (let i = 0; i < cols; i++) {
+      tpl += '1fr ';
+    }
+    return tpl.trim();
   }
 
-  private isColoredIcon(name: string): boolean {
-    const li = this.localIconFor(name);
-    return li !== undefined && li.colored;
+  // 云端图标加载失败时记录，下次渲染回退本地 SVG
+  private markCloudIconFailed(url: string): void {
+    if (url.length > 0 && this.failedIconUrls.indexOf(url) < 0) {
+      this.failedIconUrls = this.failedIconUrls.concat(url);
+    }
+  }
+
+  private cloudIconBroken(url: string): boolean {
+    return url.length > 0 && this.failedIconUrls.indexOf(url) >= 0;
   }
 
   @Builder
   TopBar() {
-    Column() {
-      Row() {
-        Row() {
-          Image($r('app.media.ic_search'))
-            .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-          TextInput({ text: this.searchText, placeholder: '搜索服务', controller: this.searchInputController })
-            .fontSize(14)
-            .fontColor(ThemeColors.textPrimary)
-            .placeholderColor('#90A4AE')
-            .backgroundColor(Color.Transparent)
-            .layoutWeight(1)
-            .margin({ left: 8 })
-            .onChange((v: string) => { this.onSearchChange(v); })
-          if (this.searchText.length > 0) {
-            Image($r('app.media.ic_public_close'))
-              .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-              .onClick(() => { this.clearSearch(); })
-          }
-        }
-        .layoutWeight(1).height(40)
-        .borderRadius(20)
+    if (immersiveMaterialSupported()) {
+      Row() { this.TopBarInner() }
+        .width('100%').height(SEARCH_BAR_HEIGHT)
+        .borderRadius(SEARCH_BAR_HEIGHT / 2)
         .padding({ left: 16, right: 16 })
         .systemMaterial(new uiMaterial.ImmersiveMaterial({
           style: uiMaterial.ImmersiveStyle.THIN,
           interactive: true,
           lightEffect: { color: undefined }
         }))
-
-        Text('管理').fontSize(14).fontColor('#2979FF')
-          .margin({ left: 12 })
-      }
-      .width('100%').padding({ left: 16, right: 16, top: this.statusBarHeight + 56, bottom: 8 })
+    } else {
+      Row() { this.TopBarInner() }
+        .width('100%').height(SEARCH_BAR_HEIGHT)
+        .borderRadius(SEARCH_BAR_HEIGHT / 2)
+        .padding({ left: 16, right: 16 })
+        .backgroundColor(ThemeColors.bgInput)
     }
-    .width('100%')
-    .backgroundColor(ThemeColors.bgPage)
-    .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.CUTOUT], [SafeAreaEdge.TOP])
+  }
+
+  @Builder
+  TopBarInner() {
+    Image($r('app.media.ic_search'))
+      .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
+    TextInput({ text: this.searchText, placeholder: '搜索服务', controller: this.searchInputController })
+      .fontSize(14)
+      .fontColor(ThemeColors.textPrimary)
+      .placeholderColor('#90A4AE')
+      .backgroundColor(Color.Transparent)
+      .layoutWeight(1)
+      .margin({ left: 8 })
+      .onChange((v: string) => { this.onSearchChange(v); })
+    if (this.searchText.length > 0) {
+      Image($r('app.media.ic_public_close'))
+        .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
+        .onClick(() => { this.clearSearch(); })
+    }
   }
 
   @Builder
@@ -285,16 +290,21 @@ export struct ServiceTab {
           GridItem() {
             Stack({ alignContent: Alignment.TopEnd }) {
               Column() {
-                if (item.iconUrl.length > 0) {
+                // 本地已有彩色图标（节假日/影吧/成绩查询等）优先用本地，避免网络加载慢/失败导致空白
+                if (localIconRes(item.name) !== undefined && isColoredIcon(item.name)) {
+                  Image(localIconRes(item.name) as Resource)
+                    .width(36).height(36).objectFit(ImageFit.Contain)
+                } else if (item.iconUrl.length > 0 && !this.cloudIconBroken(item.iconUrl)) {
                   Image(item.iconUrl).width(36).height(36).objectFit(ImageFit.Contain)
-                } else if (this.localIconRes(item.name) !== undefined) {
-                  if (this.isColoredIcon(item.name)) {
-                    Image(this.localIconRes(item.name) as Resource)
-                      .width(36).height(36).objectFit(ImageFit.Contain)
-                  } else {
-                    Image(this.localIconRes(item.name) as Resource)
-                      .width(36).height(36).fillColor('#2979FF').objectFit(ImageFit.Contain)
-                  }
+                    .onError(() => { this.markCloudIconFailed(item.iconUrl); })
+                } else if (CloudIconStore.iconUrlFor(item.name).length > 0 &&
+                  !this.cloudIconBroken(CloudIconStore.iconUrlFor(item.name))) {
+                  Image(CloudIconStore.iconUrlFor(item.name))
+                    .width(36).height(36).objectFit(ImageFit.Contain)
+                    .onError(() => { this.markCloudIconFailed(CloudIconStore.iconUrlFor(item.name)); })
+                } else if (localIconRes(item.name) !== undefined) {
+                  Image(localIconRes(item.name) as Resource)
+                    .width(36).height(36).fillColor('#2979FF').objectFit(ImageFit.Contain)
                 } else {
                   Text(item.name.substring(0, Math.min(1, item.name.length)))
                     .width(36).height(36).fontSize(16).fontColor('#FFFFFF').textAlign(TextAlign.Center)
@@ -318,81 +328,111 @@ export struct ServiceTab {
           }
         }, (item: ServiceItem, sIndex: number) => String(gIndex) + '_' + String(sIndex))
       }
-      .columnsTemplate('1fr 1fr 1fr 1fr 1fr')
+      .columnsTemplate(this.gridTemplate(this.gridCols))
       .columnsGap(4).rowsGap(4)
       .width('100%').padding({ left: 8, right: 8, bottom: 12 })
     }
     .width('100%')
+    .onAreaChange((_old: Area, newArea: Area) => {
+      const w: number = newArea.width as number;
+      if (w > 0) {
+        const cols: number = this.colsForWidth(w);
+        if (cols !== this.gridCols) {
+          this.gridCols = cols;
+        }
+      }
+    })
   }
 
   @Builder
   SearchResultRow(item: ServiceItem, index: number) {
-    Row() {
-      if (item.iconUrl.length > 0) {
-        Image(item.iconUrl).width(40).height(40).objectFit(ImageFit.Contain)
-      } else if (this.localIconRes(item.name) !== undefined) {
-        if (this.isColoredIcon(item.name)) {
-          Image(this.localIconRes(item.name) as Resource).width(40).height(40).objectFit(ImageFit.Contain)
-        } else {
-          Image(this.localIconRes(item.name) as Resource)
-            .width(40).height(40).fillColor('#2979FF').objectFit(ImageFit.Contain)
+    Column() {
+      GlassCard({ cardHeight: 56, cardRadius: 12 }) {
+        Row() {
+          if (item.iconUrl.length > 0 && !this.cloudIconBroken(item.iconUrl)) {
+            Image(item.iconUrl).width(40).height(40).objectFit(ImageFit.Contain)
+              .onError(() => { this.markCloudIconFailed(item.iconUrl); })
+          } else if (CloudIconStore.iconUrlFor(item.name).length > 0 &&
+            !this.cloudIconBroken(CloudIconStore.iconUrlFor(item.name))) {
+            Image(CloudIconStore.iconUrlFor(item.name)).width(40).height(40).objectFit(ImageFit.Contain)
+              .onError(() => { this.markCloudIconFailed(CloudIconStore.iconUrlFor(item.name)); })
+          } else if (localIconRes(item.name) !== undefined) {
+            if (isColoredIcon(item.name)) {
+              Image(localIconRes(item.name) as Resource).width(40).height(40).objectFit(ImageFit.Contain)
+            } else {
+              Image(localIconRes(item.name) as Resource)
+                .width(40).height(40).fillColor('#2979FF').objectFit(ImageFit.Contain)
+            }
+          } else {
+            Text(item.name.substring(0, Math.min(1, item.name.length)))
+              .width(40).height(40).fontSize(18).fontColor('#FFFFFF').textAlign(TextAlign.Center)
+              .backgroundColor(this.iconColor(index)).borderRadius(10)
+          }
+          Text(item.name).fontSize(15).fontColor(ThemeColors.textPrimary)
+            .margin({ left: 12 }).layoutWeight(1).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+          if (item.recommend) {
+            Text('荐').fontSize(9).fontColor('#FFFFFF').fontWeight(FontWeight.Bold)
+              .backgroundColor('#E53935').borderRadius(6)
+              .width(18).height(16).textAlign(TextAlign.Center)
+          }
+          Text('›').fontSize(18).fontColor(ThemeColors.textSecondary).margin({ left: 10, right: 16 })
         }
-      } else {
-        Text(item.name.substring(0, Math.min(1, item.name.length)))
-          .width(40).height(40).fontSize(18).fontColor('#FFFFFF').textAlign(TextAlign.Center)
-          .backgroundColor(this.iconColor(index)).borderRadius(10)
+        .width('100%').height(56).alignItems(VerticalAlign.Center)
+        .padding({ left: 12 })
       }
-      Text(item.name).fontSize(15).fontColor(ThemeColors.textPrimary)
-        .margin({ left: 12 }).layoutWeight(1).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-      if (item.recommend) {
-        Text('荐').fontSize(9).fontColor('#FFFFFF').fontWeight(FontWeight.Bold)
-          .backgroundColor('#E53935').borderRadius(6)
-          .width(18).height(16).textAlign(TextAlign.Center)
-      }
-      Text('›').fontSize(18).fontColor(ThemeColors.textSecondary).margin({ left: 10, right: 16 })
     }
-    .width('100%').height(56).alignItems(VerticalAlign.Center)
-    .padding({ left: 12 })
-    .backgroundColor(ThemeColors.bgCard)
+    .width('100%')
+    .margin({ bottom: PAGE_CARD_GAP })
     .onClick(() => { this.openService(item); })
   }
 
   build() {
-    Stack() {
-      Column() {
-        this.TopBar()
-
-        if (this.loading && this.groups.length === 0) {
+    Stack({ alignContent: Alignment.Top }) {
+      // 内容滚动区（全屏，从悬浮搜索框/分类条下方穿过）
+      if (this.loading && this.groups.length === 0) {
+        Column() {
+          LoadingProgress().width(40).height(40).color('#2979FF')
+          Text('加载服务...').fontSize(14).fontColor(ThemeColors.textSecondary).margin({ top: 12 })
+        }
+        .width('100%').height('100%').justifyContent(FlexAlign.Center)
+      } else if (this.isSearching) {
+        Scroll() {
           Column() {
-            LoadingProgress().width(40).height(40).color('#2979FF')
-            Text('加载服务...').fontSize(14).fontColor(ThemeColors.textSecondary).margin({ top: 12 })
-          }
-          .width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
-        } else if (this.isSearching) {
-          Scroll() {
-            Column() {
-              if (this.searchResults.length === 0) {
-                Text('未找到相关服务').fontSize(14).fontColor(ThemeColors.textSecondary).margin({ top: 40 })
-                  .width('100%').textAlign(TextAlign.Center)
-              } else {
-                ForEach(this.searchResults, (item: ServiceItem, index: number) => {
-                  this.SearchResultRow(item, index)
-                }, (item: ServiceItem, index: number) => 'sr_' + index + '_' + item.name)
-              }
+            if (this.searchResults.length === 0) {
+              Text('未找到相关服务').fontSize(14).fontColor(ThemeColors.textSecondary).margin({ top: 40 })
+                .width('100%').textAlign(TextAlign.Center)
+            } else {
+              ForEach(this.searchResults, (item: ServiceItem, index: number) => {
+                this.SearchResultRow(item, index)
+              }, (item: ServiceItem, index: number) => 'sr_' + index + '_' + item.name)
             }
-            .width('100%').padding({ bottom: 20 })
           }
-          .layoutWeight(1)
-          .backgroundColor($r('sys.color.ohos_id_color_background'))
-        } else if (this.groups.length === 0) {
+          .width('100%').padding({ bottom: 20 })
+        }
+        .width('100%').height('100%')
+        .align(Alignment.Top)
+        .padding({ top: this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP + SEARCH_BAR_HEIGHT + PAGE_CARD_GAP })
+        .contentEndOffset(this.bottomRectHeight + HOME_NAV_HEIGHT + PAGE_CARD_GAP)
+        .scrollBar(BarState.Off)
+        .clip(false)
+        .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
+      } else if (this.groups.length === 0) {
+        Column() {
+          Text(this.loadError.length > 0 ? ('加载失败：' + this.loadError) : '暂无服务')
+            .fontSize(14).fontColor(ThemeColors.textSecondary)
+            .width('100%').textAlign(TextAlign.Center).margin({ top: 40 })
+        }
+        .width('100%').height('100%').justifyContent(FlexAlign.Center)
+      } else {
+        // 分类条（多选按钮，随滚动隐藏）+ 主内容
+        Scroll(this.scroller) {
           Column() {
-            Text(this.loadError.length > 0 ? ('加载失败：' + this.loadError) : '暂无服务')
-              .fontSize(14).fontColor(ThemeColors.textSecondary)
-              .width('100%').textAlign(TextAlign.Center).margin({ top: 40 })
-          }
-          .layoutWeight(1)
-        } else {
-          Column() {
+            // 顶部占位（避让悬浮搜索框 + 分类条）
+            Column()
+              .width('100%')
+              .height(this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP + SEARCH_BAR_HEIGHT + PAGE_CARD_GAP)
+
+            // 分类条（横向多选按钮）
             Scroll() {
               Row() {
                 ForEach(this.groups, (group: ServiceGroup, gIndex: number) => {
@@ -411,33 +451,44 @@ export struct ServiceTab {
             .scrollable(ScrollDirection.Horizontal)
             .scrollBar(BarState.Off)
             .width('100%').height(44)
-            .backgroundColor(ThemeColors.bgPage)
 
-            Scroll(this.scroller) {
-              Column() {
-                ForEach(this.groups, (group: ServiceGroup, gIndex: number) => {
-                  Column() {
-                    this.GroupBlock(group, gIndex)
-                  }
-                  .width('100%')
-                  .id('group_' + gIndex)
-                  .onAreaChange((_old: Area, newArea: Area) => {
-                    this.onGroupAreaChange(gIndex, newArea);
-                  })
-                }, (group: ServiceGroup, gIndex: number) => 'g_' + gIndex)
-                Blank().height(24)
-              }
-              .width('100%')
+            // 分组内容
+            Column() {
+              ForEach(this.groups, (group: ServiceGroup, gIndex: number) => {
+                Column() {
+                  this.GroupBlock(group, gIndex)
+                }
+                .width('100%')
+                .id('group_' + gIndex)
+                .onAreaChange((_old: Area, newArea: Area) => {
+                  this.onGroupAreaChange(gIndex, newArea);
+                })
+              }, (group: ServiceGroup, gIndex: number) => 'g_' + gIndex)
+              Blank().height(24)
             }
-            .layoutWeight(1)
-            .scrollBar(BarState.Off)
-            .backgroundColor(ThemeColors.bgPage)
+            .width('100%')
           }
-          .width('100%').layoutWeight(1)
+          .width('100%')
         }
+        .width('100%').height('100%')
+        .align(Alignment.Top)
+        .contentEndOffset(this.bottomRectHeight + HOME_NAV_HEIGHT + PAGE_CARD_GAP)
+        .scrollBar(BarState.Off)
+        .backgroundColor(Color.Transparent)
+        .clip(false)
+        .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
       }
-      .width('100%').height('100%')
+
+      // 悬浮搜索框（毛玻璃，位置与主页一致）
+      Row() {
+        this.TopBar()
+      }
+      .width('100%')
+      .padding({ left: HOME_HORIZONTAL_PADDING, right: HOME_HORIZONTAL_PADDING })
+      .position({ x: 0, y: this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP })
+      .zIndex(12)
     }
     .width('100%').height('100%')
+    .backgroundColor(Color.Transparent)
   }
 }

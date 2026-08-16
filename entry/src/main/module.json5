@@ -37,7 +37,7 @@
         "name": "ohos.permission.READ_CALENDAR",
         "reason": "$string:calendar_permission_reason",
         "usedScene": {
-          "abilities": ["EntryAbility"],
+          "abilities": ["EntryAdbility"],
           "when": "inuse"
         }
       },
@@ -85,18 +85,6 @@
             "resource": "$profile:backup_config"
           }
         ],
-      },
-      {
-        "name": "EntryFormAbility",
-        "srcEntry": "./ets/entryformability/EntryFormAbility.ets",
-        "description": "$string:EntryFormAbility_desc",
-        "type": "form",
-        "metadata": [
-          {
-            "name": "ohos.extension.form",
-            "resource": "$profile:form_config"
-          }
-        ]
       }
     ]
   }

@@ -1,5 +1,8 @@
 {
   "app": {
+    // 签名配置：开源仓库不含真实签名凭据。
+    // 本地构建请用 DevEco Studio 重新配置（File → Project Structure → Signing Configs）
+    // 或替换下方 certpath / keyPassword / profile / storeFile / storePassword 为你的签名信息。
     "signingConfigs": [
       {
         "name": "default",
@@ -7,11 +10,11 @@
         "material": {
           "certpath": "C:\\Users\\26567\\.ohos\\config\\default_YSSG_U7W0Vxxu74pkjxEUfABQXSZsPEq1ugPjO4vPndVhwes=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B37A1E87B5269146871460F009BA2E12AA3EC78A5E57134DF06EB69D38D6D0BF511F43771CDAD75",
+          "keyPassword": "0000001B6E81D1F15D918896CCA128B6D63AF816D2AD292D6DBEC23D10D4A111CACF1030FB4F033CC47077",
           "profile": "C:\\Users\\26567\\.ohos\\config\\default_YSSG_U7W0Vxxu74pkjxEUfABQXSZsPEq1ugPjO4vPndVhwes=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "C:\\Users\\26567\\.ohos\\config\\default_YSSG_U7W0Vxxu74pkjxEUfABQXSZsPEq1ugPjO4vPndVhwes=.p12",
-          "storePassword": "0000001BE6E677D12C7C7A8D34B22887911F087F05824370180A1FE3F71BE677EFDA0AF36F79111214689B"
+          "storePassword": "0000001BA9CC94826621707C1338B7C51C171B659B4999098AB1D54AE703352AF0B9AE23FAC7E3F7793478"
         }
       }
     ],
@@ -43,6 +46,18 @@
     {
       "name": "entry",
       "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "privacy_consent_dialog",
+      "srcPath": "./privacy_consent_dialog",
       "targets": [
         {
           "name": "default",

@@ -1,5 +1,5 @@
-// SqgConstants.ets — 云上商工（商丘工学院）平台常量
-// 域名来源：云上商工 APK 内 app-service.js 逆向提取，见 docs/接口交接文档.md
+// SqgConstants.ets — Hi商工（商丘工学院）平台常量
+// 域名来源：Hi商工 APK 内 app-service.js 逆向提取，见 docs/接口交接文档.md
 
 // 登录 / token 服务（appletBase）
 export const APPLET_BASE: string = 'https://cas.sqgxy.edu.cn/token/';

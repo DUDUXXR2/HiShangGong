@@ -225,13 +225,6 @@ export class HttpUtil {
       }
     }
     let result: string = parts.join('; ');
-    // 对 ehall 域强制注入 MOD_AUTH_CAS（冗余保护：即使 cookie store 出问题也能正常工作）
-    if (domain === 'ehall.xidian.edu.cn' && result.indexOf('MOD_AUTH_CAS') < 0) {
-      const modCas: string = PreferenceUtil.getString('mod_auth_cas');
-      if (modCas.length > 0) {
-        result = result.length > 0 ? result + '; MOD_AUTH_CAS=' + modCas : 'MOD_AUTH_CAS=' + modCas;
-      }
-    }
     return result;
   }
 
@@ -400,7 +393,7 @@ export class HttpUtil {
             return;
           }
           if (err !== undefined && err.code !== 0) {
-            console.error('[HiXD] HTTP noRedirect failed code=' + err.code + ' msg=' + err.message + ' url=' + url);
+            console.error('[HTTP] noRedirect failed code=' + err.code + ' msg=' + err.message + ' url=' + url);
             req.destroy();
             reject(new Error('HTTP ' + err.code + ': ' + err.message));
             return;
@@ -513,7 +506,7 @@ export class HttpUtil {
           },
           async (err: BusinessError | undefined, data: http.HttpResponse) => {
             if (err !== undefined && err.code !== 0) {
-              console.error('[HiXD] HTTP req failed code=' + err.code + ' msg=' + err.message + ' url=' + url);
+              console.error('[HTTP] req failed code=' + err.code + ' msg=' + err.message + ' url=' + url);
               reject(new Error('HTTP ' + err.code + ': ' + err.message));
               req.destroy();
               return;
@@ -557,7 +550,7 @@ export class HttpUtil {
           },
           async (err: BusinessError | undefined, data: http.HttpResponse) => {
             if (err !== undefined && err.code !== 0) {
-              console.error('[HiXD] HTTP req failed code=' + err.code + ' msg=' + err.message + ' url=' + url);
+              console.error('[HTTP] req failed code=' + err.code + ' msg=' + err.message + ' url=' + url);
               reject(new Error('HTTP ' + err.code + ': ' + err.message));
               req.destroy();
               return;

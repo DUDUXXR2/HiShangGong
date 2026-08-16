@@ -1,10 +1,11 @@
-// SqgService.ets — 云上商工（商丘工学院）核心服务
+// SqgService.ets — Hi商工（商丘工学院）核心服务
 // 登录 + 请求头封装 + 门户/首页/公告/课表等接口
 // 接口来源：APK 内 app-service.js 逆向提取，见 docs/接口交接文档.md
 import { deviceInfo } from '@kit.BasicServicesKit';
 import { util } from '@kit.ArkTS';
 import { common } from '@kit.AbilityKit';
 import { fileIo } from '@kit.CoreFileKit';
+import web_webview from '@ohos.web.webview';
 import { HttpUtil, HttpResponse } from '../utils/HttpUtil';
 import { PreferenceUtil } from '../utils/PreferenceUtil';
 import {
@@ -33,8 +34,30 @@ export class AccountInfo {
   userId: string = '';
 }
 
+// ===== 云控首页模型（getAppThemeDetail）=====
+export class CloudColumnService {
+  id: string = '';
+  cardImage: string = '';
+  iconUrl: string = '';
+  serviceName: string = '';
+  serviceUrl: string = '';
+  mainTitle: string = '';
+  subTitle: string = '';
+  backColor: string = '';
+  fontColor: string = '';
+  orderNumber: number = 0;
+  isShow: string = '';
+  tokenAccept: string = '';
+  serviceId: string = '';
+}
+
+export class CloudThemeColumn {
+  columnType: number = 0;
+  columnServices: CloudColumnService[] = [];
+}
+
 /**
- * 云上商工服务单例：
+ * Hi商工服务单例：
  * 1. getHeaders() —— 复刻原 App 的请求头（X-Device-Info / X-Device-Infos / X-Terminal-Info / X-Id-Token）
  * 2. login() —— 密码登录，保存 X-Id-Token
  * 3. 门户/首页/公告/课表接口
@@ -42,6 +65,8 @@ export class AccountInfo {
 export class SqgService {
   private static instance: SqgService;
   private http: HttpUtil = HttpUtil.getInstance();
+  private cachedThemeId: string = '';
+  private cloudDetail: object | null = null;
 
   private constructor() {
   }
@@ -129,6 +154,8 @@ export class SqgService {
           ai.userId = String(acc['userId'] ?? '');
           accounts.push(ai);
         }
+        // 登录成功前先清除旧账号 token/账号数据，避免切换账号时残留旧账号信息
+        await this.clearUserData();
         await PreferenceUtil.putString('id_token', idToken);
         await PreferenceUtil.putString('ids_account', username);
         await PreferenceUtil.putString('login_password', password);
@@ -206,6 +233,10 @@ export class SqgService {
 
   // 统一解析 {code, msg|message, data}
   private parseSqg<T>(resp: HttpResponse): SqgResult<T> {
+    // 非 2xx：明确报 HTTP 状态码，避免把 503 误判成"会话已过期"
+    if (resp.statusCode !== 0 && (resp.statusCode < 200 || resp.statusCode >= 300)) {
+      throw new Error('服务暂不可用（HTTP ' + resp.statusCode + '），请稍后重试');
+    }
     try {
       const obj: Record<string, Object> = JSON.parse(resp.body) as Record<string, Object>;
       const code: number = Number(obj['code'] ?? -1);
@@ -219,7 +250,7 @@ export class SqgService {
       r.data = data;
       return r;
     } catch (e) {
-      // 未登录时服务器可能返回登录页 HTML
+      // 2xx 但响应不是 JSON：未登录时服务器可能返回登录页 HTML
       if (resp.body.trimStart().startsWith('<')) {
         throw new Error('会话已过期，请重新登录');
       }
@@ -240,14 +271,14 @@ export class SqgService {
 
   // 首页公告列表（CMS）
   // 原 App 调用参数：{ pageIndex, pageSize, columnCode:'gonggao' }，返回 data.allContents
+  // 注意：CMS 代理只认 GET + query 参数；用 POST 会返回 404
   async getAnnouncements(pageIndex: number = 1, pageSize: number = 5): Promise<object[] | null> {
     const query: Record<string, string> = {};
     query['pageIndex'] = String(pageIndex);
     query['pageSize'] = String(pageSize);
     query['columnCode'] = 'gonggao';
-    const resp: HttpResponse = await this.requestWithToken('POST', PORTAL_BASE,
+    const resp: HttpResponse = await this.requestWithToken('GET', PORTAL_BASE,
       'api/proxy/cms/api/rest/mobile/v2/content/list',
-      undefined,
       query);
     const r: SqgResult<object> = this.parseSqg<object>(resp);
     if (r.code === 0 && r.data !== null) {
@@ -313,6 +344,62 @@ export class SqgService {
     throw new Error('获取服务列表失败 code=' + r.code + ' msg=' + r.msg + ' | ' + body);
   }
 
+  // ===== 云控首页（getAppThemeDetail）=====
+  // 调用链：POST /v1/app/Theme/defaultAppTheme（无 body）→ data.data = themeId
+  //        → GET /v1/app/Theme/getAppThemeDetail?themeId=xxx → data.data.themeColumns[]
+  // columnType=11 为首页快捷按钮区，columnServices 含 cardImage/iconUrl/serviceName/serviceUrl/tokenAccept
+  async getDefaultThemeId(): Promise<string> {
+    if (this.cachedThemeId.length > 0) {
+      return this.cachedThemeId;
+    }
+    const full: Record<string, string> = await this.getHeaders();
+    const headers: Record<string, string> = {
+      'X-Device-Info': full['X-Device-Info'] ?? '',
+      'X-Device-Infos': full['X-Device-Infos'] ?? '',
+      'X-Terminal-Info': full['X-Terminal-Info'] ?? '',
+      'X-Id-Token': full['X-Id-Token'] ?? '',
+      'Accept': 'application/json'
+    };
+    // postEmpty 发无 body 的 POST（传空串 body 会 401 Parameter error，参照 login）
+    const resp: HttpResponse = await this.http.postEmpty(PORTAL_BASE + 'v1/app/Theme/defaultAppTheme', headers);
+    const r: SqgResult<string> = this.parseSqg<string>(resp);
+    if (r.code === 0 && r.data !== null) {
+      this.cachedThemeId = String(r.data);
+      return this.cachedThemeId;
+    }
+    return '';
+  }
+
+  // 云控首页详情：返回 data.themeColumns 数组，失败返回 null（不抛，避免 UI 崩溃）
+  async getAppThemeDetail(): Promise<object[] | null> {
+    if (this.cloudDetail !== null) {
+      return this.cloudDetail as object[];
+    }
+    try {
+      let themeId: string = this.cachedThemeId;
+      if (themeId.length === 0) {
+        themeId = await this.getDefaultThemeId();
+      }
+      if (themeId.length === 0) {
+        return null;
+      }
+      const query: Record<string, string> = {};
+      query['themeId'] = themeId;
+      const resp: HttpResponse = await this.requestWithToken('GET', PORTAL_BASE,
+        'v1/app/Theme/getAppThemeDetail', query);
+      const r: SqgResult<object> = this.parseSqg<object>(resp);
+      if (r.code === 0 && r.data !== null) {
+        const dataObj: Record<string, Object> = r.data as Record<string, Object>;
+        const columns: object[] = (dataObj['themeColumns'] as object[]) ?? [];
+        this.cloudDetail = columns;
+        return columns;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // 横幅
   async getBanners(): Promise<object[] | null> {
     const resp: HttpResponse = await this.requestWithToken('POST', PORTAL_BASE,
@@ -322,6 +409,99 @@ export class SqgService {
       return r.data;
     }
     return null;
+  }
+
+  // ===== 扫一扫 =====
+  // 扫码结果是非 URL（如校园码/付款码）时，用 getScanInfo 解析出最终跳转地址
+  // 安卓原逻辑（app-service.js handleUrlForSysScan）：非 http 开头 → baseApi.Scan({parameter})
+  // GET {CMSUrl}/v1/personalData/getScanInfo?parameter=xxx → data.data 为跳转地址（可能为字符串或 {serviceUrl}）
+  async getScanInfo(parameter: string): Promise<string> {
+    try {
+      const query: Record<string, string> = {};
+      query['parameter'] = parameter;
+      const resp: HttpResponse = await this.requestWithToken('GET', PORTAL_BASE,
+        'v1/personalData/getScanInfo', query);
+      const r: SqgResult<object> = this.parseSqg<object>(resp);
+      if (r.code === 0 && r.data !== null) {
+        const data: Record<string, Object> = r.data as Record<string, Object>;
+        const url: Object | undefined = data['serviceUrl'] ?? data['url'] ?? r.data;
+        if (url !== undefined) {
+          return String(url);
+        }
+      }
+      return '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // 扫码结果是 http URL 时，若命中云控 scanArrayUrl 白名单，可调用此接口把扫码 URL 解析成最终跳转地址
+  // POST {CMSUrl}/v1/thrid-adapter/pre-process-scan-url body {url: xxx} → data.data 为跳转地址
+  async preProcessScanUrl(url: string): Promise<string> {
+    try {
+      const full: Record<string, string> = await this.getHeaders();
+      const headers: Record<string, string> = {
+        'X-Device-Info': full['X-Device-Info'] ?? '',
+        'X-Device-Infos': full['X-Device-Infos'] ?? '',
+        'X-Terminal-Info': full['X-Terminal-Info'] ?? '',
+        'X-Id-Token': full['X-Id-Token'] ?? '',
+        'Accept': 'application/json'
+      };
+      const body: string = '{"url":"' + url.replace(/"/g, '\\"') + '"}';
+      const resp: HttpResponse = await this.http.postRaw(
+        PORTAL_BASE + 'v1/thrid-adapter/pre-process-scan-url', body, 'application/json', headers);
+      const r: SqgResult<object> = this.parseSqg<object>(resp);
+      if (r.code === 0 && r.data !== null) {
+        const data: Record<string, Object> = r.data as Record<string, Object>;
+        const u: Object | undefined = data['serviceUrl'] ?? data['url'] ?? r.data;
+        if (u !== undefined) {
+          return String(u);
+        }
+      }
+      return '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // ===== 消息中心（站内信）=====
+  // 安卓消息 Tab 用 GET {message-service}/api/v1/instantMessage/appGroupByTag
+  // 实测返回：{code:0, data:{list:[{appName,title,content,editTime,type,topTime,...}]}}
+  async getAppMessages(): Promise<object[] | null> {
+    try {
+      const resp: HttpResponse = await this.requestWithToken('GET', MESSAGE_BASE,
+        'api/v1/instantMessage/appGroupByTag');
+      console.info('[YS] msg status=' + resp.statusCode + ' body=' + resp.body.substring(0, 300));
+      if (resp.body.length === 0) {
+        return null;
+      }
+      const obj: Record<string, Object> = JSON.parse(resp.body) as Record<string, Object>;
+      const code: number = Number(obj['code'] ?? -1);
+      if (code !== 0) {
+        console.info('[YS] msg code=' + code + ' msg=' + String(obj['message'] ?? ''));
+        return null;
+      }
+      // 实测 data.list 直接是数组；不判断类型直接强转（ArkTS 里 instanceof/Array.isArray 对 JSON 数组不可靠）
+      const data: Object | undefined = obj['data'];
+      if (data === undefined || data === null) {
+        return null;
+      }
+      const rec: Record<string, Object> = data as Record<string, Object>;
+      let list: object[] = (rec['list'] as object[]) ?? [];
+      if (list.length === 0) {
+        // 兜底：data.data.list
+        const inner: Object | undefined = rec['data'];
+        if (inner !== undefined && inner !== null) {
+          const innerRec: Record<string, Object> = inner as Record<string, Object>;
+          list = (innerRec['list'] as object[]) ?? [];
+        }
+      }
+      console.info('[YS] msg listLen=' + list.length.toString());
+      return list;
+    } catch (e) {
+      console.error('[YS] msg err=' + String(e));
+      return null;
+    }
   }
 
   // ===== 用户信息 =====
@@ -359,6 +539,36 @@ export class SqgService {
       const obj: Record<string, Object> = JSON.parse(decoded) as Record<string, Object>;
       const nameObj: Object | undefined = obj['ATTR_userName'] ?? obj['ATTR_name'] ?? obj['name'];
       return nameObj === undefined ? '' : String(nameObj);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // 从本地 id_token (JWT) 解码用户身份类型名（游客/学生/教师等）。
+  // 身份在 JWT payload 的 ATTR_identityTypeName（个别环境 ATTR_identityType / identityTypeName）。
+  getIdentityName(): string {
+    try {
+      const token: string = this.token();
+      if (token.length === 0) {
+        return '';
+      }
+      const parts: string[] = token.split('.');
+      if (parts.length < 2) {
+        return '';
+      }
+      let b64: string = parts[1];
+      b64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4 !== 0) {
+        b64 = b64 + '=';
+      }
+      const base64Helper: util.Base64Helper = new util.Base64Helper();
+      const bytes: Uint8Array = base64Helper.decodeSync(b64);
+      const decoder: util.TextDecoder = util.TextDecoder.create('utf-8');
+      const decoded: string = decoder.decodeToString(bytes);
+      const obj: Record<string, Object> = JSON.parse(decoded) as Record<string, Object>;
+      const identity: Object | undefined = obj['ATTR_identityTypeName'] ??
+        obj['ATTR_identityType'] ?? obj['identityTypeName'];
+      return identity === undefined ? '' : String(identity);
     } catch (e) {
       return '';
     }
@@ -403,9 +613,14 @@ export class SqgService {
       AppStorage.setOrCreate('mine_email_count', '--');
     } catch (e) {
     }
-    // 清空 HTTP Cookie（含 WebView 会话）
+    // 清空 HTTP Cookie
     try {
       await HttpUtil.getInstance().clearCookies();
+    } catch (e) {
+    }
+    // 清空 WebView cookie 会话（切账号/退出后残留的 H5 会话是上个账号的，必须一并清掉）
+    try {
+      await web_webview.WebCookieManager.clearAllCookies();
     } catch (e) {
     }
     // 课表落盘文件
@@ -795,5 +1010,14 @@ export class SqgService {
       return result;
     }
     throw new Error(r.msg || '获取课表失败');
+  }
+
+  /**
+   * 退出登录：清除全部业务缓存 + 登录态标记。
+   * 调用方 await 后再跳登录页，避免 token 删除未落盘的竞态。
+   */
+  async logout(): Promise<void> {
+    await this.clearUserData();
+    await PreferenceUtil.putBool('is_logged_in', false);
   }
 }

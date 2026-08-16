@@ -2,6 +2,9 @@ import { router } from '@kit.ArkUI';
 import { ThemeColors } from '../../utils/ThemeColors';
 import { PreferenceUtil } from '../../utils/PreferenceUtil';
 import { SqgService } from '../../services/SqgService';
+import { ImmersionButton } from '@tangs/components';
+import { ActionButtonModifier } from '../../components/ImmersionActionButton';
+import { MaterialConfig } from '../../utils/MaterialConfig';
 
 const TAG = 'LoginPage';
 
@@ -63,7 +66,7 @@ struct LoginPage {
           .alignSelf(ItemAlign.Center)
           .shadow({ radius: 12, color: '#0000001A', offsetY: 4 })
         Column() {
-          Text('云上商工').fontSize(24).fontWeight(FontWeight.Bold).fontColor(ThemeColors.textPrimary)
+          Text('Hi商工').fontSize(24).fontWeight(FontWeight.Bold).fontColor(ThemeColors.textPrimary)
             .margin({ bottom: 8 })
           Text('输入学号和密码进行登录').fontSize(14).fontColor(ThemeColors.textSecondary)
             .margin({ bottom: 32 })
@@ -91,12 +94,33 @@ struct LoginPage {
         }
         .width('100%').margin({ top: 16 })
 
-        Button(this.isSubmitting ? '登录中...' : '登录')
-          .width('100%').height(48).fontSize(16).fontColor('#FFFFFF')
-          .backgroundColor(this.isSubmitting ? '#90CAF9' : '#2979FF').borderRadius(8)
-          .margin({ top: 32 })
-          .enabled(!this.isSubmitting)
-          .onClick(() => this.doLogin())
+        Stack({ alignContent: Alignment.Center }) {
+          ImmersionButton({
+            systemMaterialEffect: {
+              materialType: MaterialConfig.configuredMaterialType(),
+              materialLevel: MaterialConfig.configuredMaterialLevel()
+            },
+            buttonModify: new ActionButtonModifier('100%', 48,
+              this.isSubmitting ? '#90CAF9' : '#2979FF',
+              this.isSubmitting ? '#90CAF9' : '#2979FF'),
+            click: (): void => { this.doLogin(); }
+          }) {
+            if (this.isSubmitting) {
+              LoadingProgress().width(20).height(20).color('#FFFFFF')
+            } else {
+              Text('登录')
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#FFFFFF')
+            }
+          }
+        }
+        .width('100%')
+        .height(48)
+        .borderRadius(24)
+        .clip(false)
+        .margin({ top: 32 })
+        .opacity(this.isSubmitting ? 0.7 : 1)
 
         if (this.statusText.length > 0) {
           Text(this.statusText)

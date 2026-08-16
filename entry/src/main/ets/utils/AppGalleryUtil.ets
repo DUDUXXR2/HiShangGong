@@ -20,11 +20,11 @@ export function openAppGalleryDetail(context: common.UIAbilityContext): void {
     productViewManager.loadProduct(context, want, {
       onError: (err: BusinessError) => {
         console.error('[AppGalleryUtil] loadProduct failed: ' + JSON.stringify(err));
-        ToastUtil.show('未能打开应用市场，请在华为应用市场搜索「HiXD」查看更新');
+        ToastUtil.show('未能打开应用市场，请在华为应用市场搜索「Hi商工」查看更新');
       }
     });
   } catch (e) {
     console.error('[AppGalleryUtil] loadProduct exception: ' + (e as Error)?.message);
-    ToastUtil.show('未能打开应用市场，请在华为应用市场搜索「HiXD」查看更新');
+    ToastUtil.show('未能打开应用市场，请在华为应用市场搜索「Hi商工」查看更新');
   }
 }

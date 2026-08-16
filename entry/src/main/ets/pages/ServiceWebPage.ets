@@ -1,12 +1,18 @@
 import web_webview from '@ohos.web.webview';
-import { window } from '@kit.ArkUI';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { common } from '@kit.AbilityKit';
 import { ThemeColors } from '../utils/ThemeColors';
 import { PreferenceUtil } from '../utils/PreferenceUtil';
 import { HttpUtil } from '../utils/HttpUtil';
 import { CAS_ARRY } from '../services/SqgConstants';
 import { WebPageParam } from './NavParams';
 import StatusBarUtil from '../utils/StatusBarUtil';
+import { BackgroundManager, BackgroundLayer } from '../utils/BackgroundManager';
+import { systemShare } from '@kit.ShareKit';
+import { uniformTypeDescriptor as utd } from '@kit.ArkData';
+import { BusinessError } from '@kit.BasicServicesKit';
+
+const FLOATING_BTN_SIZE: number = 36;
+const FLOATING_BTN_MARGIN: number = 16;
 
 class WebHeader {
   headerKey: string = '';
@@ -31,6 +37,9 @@ export struct ServiceWebPage {
   @State url: string = '';
   @State isLoading: boolean = true;
   @State loadError: string = '';
+  @State currentUrl: string = '';
+  @StorageProp('statusBarHeight') statusBarHeight: number = 0;
+  @StorageLink('theme_is_dark') themeIsDark: boolean = false;
   private webController: web_webview.WebviewController = new web_webview.WebviewController();
   private bridge: WebBridge = new WebBridge();
   private scrollTimer: number = -1;
@@ -42,10 +51,11 @@ export struct ServiceWebPage {
         const p: WebPageParam = list[0];
         this.title = p.title.length > 0 ? p.title : '服务';
         this.url = p.url;
+        this.currentUrl = p.url;
       }
     } catch (e) {
     }
-    StatusBarUtil.resetStatusBar();
+    StatusBarUtil.setStatusBarColor('#00000000', '#FFFFFF');
     setTimeout(() => { this.loadWithAuth(); }, 50);
   }
 
@@ -118,80 +128,61 @@ export struct ServiceWebPage {
     this.pageStack.pop();
   }
 
-  build() {
-    NavDestination() {
-      Stack() {
-        if (this.url.length > 0) {
-          Web({ src: '', controller: this.webController })
-            .width('100%').height('100%')
-            .javaScriptAccess(true)
-            .domStorageAccess(true)
-            .javaScriptProxy({
-              object: this.bridge,
-              methodList: ['updateStatusBar'],
-              name: 'etsBridge',
-              controller: this.webController
-            })
-            .onPageBegin(() => {
-              this.isLoading = true;
-            })
-            .onPageEnd(() => {
-              this.isLoading = false;
-              this.pullTopColor();
-            })
-            .onScroll(() => {
-              if (this.scrollTimer >= 0) {
-                clearTimeout(this.scrollTimer);
-              }
-              this.scrollTimer = setTimeout(() => {
-                this.pullTopColor();
-                this.scrollTimer = -1;
-              }, 50);
-            })
-            .onErrorReceive(() => {
-              this.isLoading = false;
-              this.loadError = '页面加载失败';
-            })
-        } else {
-          Column() {
-            Text('未提供网页地址').fontSize(14).fontColor(ThemeColors.textSecondary)
-          }
-          .width('100%').height('100%').justifyContent(FlexAlign.Center)
+  private interceptExternalScheme(url: string): boolean {
+    if (url.startsWith('alipays://') || url.startsWith('alipay://') ||
+      url.startsWith('weixin://') || url.startsWith('wechat://')) {
+      try {
+        const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+        if (ctx) {
+          ctx.openLink(url).catch(() => {
+          });
         }
-
-        if (this.isLoading) {
-          LoadingProgress().width(36).height(36).color('#2979FF')
-        }
-
-        if (this.loadError.length > 0) {
-          Column() {
-            Text(this.loadError).fontSize(13).fontColor('#C62828').padding(12)
-            Button('重试').fontSize(13).onClick(() => { this.loadWithAuth(); })
-          }
-          .width('100%')
-        }
+      } catch (e) {
       }
-      .width('100%').height('100%')
+      return true;
     }
-    .title(this.title)
-    .hideTitleBar(false)
-    .backgroundColor($r('sys.color.ohos_id_color_background'))
+    return false;
   }
 
-  private pullTopColor(): void {
+  private sharePage(): void {
+    try {
+      const shareData: systemShare.SharedData = new systemShare.SharedData({
+        utd: utd.UniformDataType.HYPERLINK,
+        content: this.currentUrl,
+        title: this.title
+      });
+      const controller: systemShare.ShareController = new systemShare.ShareController(shareData);
+      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      if (ctx) {
+        controller.show(ctx, {
+          selectionMode: systemShare.SelectionMode.SINGLE,
+          previewMode: systemShare.SharePreviewMode.DEFAULT
+        }).catch((err: BusinessError) => {
+          console.error('ShareController show error: ' + err.message);
+        });
+      }
+    } catch (e) {
+      console.error('sharePage error: ' + String(e));
+    }
+  }
+
+  private updateStatusBarFromPage(): void {
     try {
       const script: string =
         '(function(){' +
-        '  var el = document.body || document.documentElement;' +
+        '  var pick = function(el) {' +
+        '    if (!el) return "";' +
+        '    var bg = window.getComputedStyle(el).backgroundColor;' +
+        '    if (!bg || bg === "rgba(0, 0, 0, 0)" || bg === "transparent") return "";' +
+        '    return bg;' +
+        '  };' +
         '  var bg = "";' +
-        '  if (el) {' +
-        '    bg = window.getComputedStyle(el).backgroundColor;' +
-        '    if (!bg || bg === "rgba(0, 0, 0, 0)" || bg === "transparent") {' +
-        '      var html = document.documentElement;' +
-        '      bg = window.getComputedStyle(html).backgroundColor;' +
-        '    }' +
+        '  bg = pick(document.body) || pick(document.documentElement);' +
+        '  if (!bg) {' +
+        '    var top = document.elementFromPoint(window.innerWidth / 2, 2);' +
+        '    bg = pick(top);' +
         '  }' +
-        '  if (!bg || bg === "rgba(0, 0, 0, 0)" || bg === "transparent") bg = "rgb(255,255,255)";' +
+        '  if (!bg) bg = "rgb(255,255,255)";' +
         '  return bg;' +
         '})()';
       this.webController.runJavaScript(script, (err: Error, result: string) => {
@@ -201,10 +192,160 @@ export struct ServiceWebPage {
         const c = StatusBarUtil.rgbToHex(result);
         if (c.length > 0) {
           const textColor: string = StatusBarUtil.textColorForBg(c);
-          StatusBarUtil.setStatusBarColor(c, textColor);
+          StatusBarUtil.setStatusBarColor('#00000000', textColor);
         }
       });
     } catch (e) {
     }
+  }
+
+  private injectSafePadding(): void {
+    try {
+      const topPx: number = this.statusBarHeight + 8 + FLOATING_BTN_SIZE + 8;
+      const script: string =
+        '(function(){' +
+        '  var s = document.createElement("style");' +
+        '  s.textContent = "body{padding-top:' + topPx.toString() + 'px !important;}";' +
+        '  document.head.appendChild(s);' +
+        '})()';
+      this.webController.runJavaScript(script);
+    } catch (e) {
+    }
+  }
+
+  build() {
+    NavDestination() {
+      Stack({ alignContent: Alignment.TopStart }) {
+        BackgroundLayer()
+
+        Web({ src: '', controller: this.webController })
+          .width('100%')
+          .height('100%')
+          .javaScriptAccess(true)
+          .domStorageAccess(true)
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+          .onLoadIntercept((event) => {
+            let url: string = '';
+            try {
+              url = event.data.getRequestUrl();
+            } catch (e) {
+            }
+            return this.interceptExternalScheme(url);
+          })
+          .javaScriptProxy({
+            object: this.bridge,
+            methodList: ['updateStatusBar'],
+            name: 'etsBridge',
+            controller: this.webController
+          })
+          .onPageBegin(() => {
+            this.isLoading = true;
+          })
+          .onPageEnd(() => {
+            this.isLoading = false;
+            try {
+              this.currentUrl = this.webController.getUrl();
+            } catch (e) {
+            }
+            this.updateStatusBarFromPage();
+            this.injectSafePadding();
+          })
+          .onTitleReceive((event) => {
+            if (event.title.length > 0) {
+              this.title = event.title;
+            }
+          })
+          .onScroll(() => {
+            if (this.scrollTimer >= 0) {
+              clearTimeout(this.scrollTimer);
+            }
+            this.scrollTimer = setTimeout(() => {
+              this.updateStatusBarFromPage();
+              this.scrollTimer = -1;
+            }, 50);
+          })
+          .onErrorReceive(() => {
+            this.isLoading = false;
+            this.loadError = '页面加载失败';
+          })
+
+        // 悬浮按钮栏：左上角返回 + 右上角分享
+        Row() {
+          Stack({ alignContent: Alignment.Center }) {
+            SymbolGlyph($r('sys.symbol.chevron_backward'))
+              .fontSize(18)
+              .fontColor(['#FFFFFF'])
+              .fontWeight(FontWeight.Medium)
+              .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+          }
+          .width(FLOATING_BTN_SIZE)
+          .height(FLOATING_BTN_SIZE)
+          .borderRadius(FLOATING_BTN_SIZE / 2)
+          .backgroundColor('#66000000')
+          .backdropBlur(20)
+          .onClick(() => { this.goBack(); })
+
+          Blank()
+
+          Stack({ alignContent: Alignment.Center }) {
+            Text('↗')
+              .fontSize(18)
+              .fontColor('#FFFFFF')
+              .fontWeight(FontWeight.Bold)
+          }
+          .width(FLOATING_BTN_SIZE)
+          .height(FLOATING_BTN_SIZE)
+          .borderRadius(FLOATING_BTN_SIZE / 2)
+          .backgroundColor('#66000000')
+          .backdropBlur(20)
+          .onClick(() => { this.sharePage(); })
+        }
+        .width('100%')
+        .padding({
+          left: FLOATING_BTN_MARGIN,
+          right: FLOATING_BTN_MARGIN,
+          top: this.statusBarHeight + 8
+        })
+        .zIndex(10)
+
+        if (this.isLoading) {
+          Column() {
+            LoadingProgress().width(36).height(36).color('#2979FF')
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor('#33000000')
+          .zIndex(5)
+        }
+
+        if (this.loadError.length > 0) {
+          Column() {
+            Text(this.loadError).fontSize(13).fontColor('#C62828').padding(12)
+            Text('重试')
+              .fontSize(13)
+              .fontWeight(FontWeight.Medium)
+              .fontColor('#2979FF')
+              .padding({ left: 20, right: 20, top: 8, bottom: 8 })
+              .borderRadius(16)
+              .backgroundColor('#FFFFFF')
+              .onClick(() => { this.loadWithAuth(); })
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
+          .zIndex(6)
+        }
+      }
+      .width('100%').height('100%')
+      .backgroundColor(BackgroundManager.pageBackgroundColor(this.themeIsDark))
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+    }
+    .hideTitleBar(true)
+    .backgroundColor(BackgroundManager.pageBackgroundColor(this.themeIsDark))
+    .onBackPressed(() => {
+      this.goBack();
+      return true;
+    })
   }
 }

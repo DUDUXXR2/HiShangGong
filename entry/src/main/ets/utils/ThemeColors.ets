@@ -41,6 +41,10 @@ export class ThemeColors {
     _prefMode = ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET;
     const appCtx: ESObject = (ctx as ESObject)['getApplicationContext']() as ESObject;
     appCtx['setColorMode'](ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
+    const config: ESObject = (ctx as ESObject)['config'] as ESObject;
+    const sysMode: number = config['colorMode'] as number;
+    _isDark = (sysMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK);
+    try { AppStorage.setOrCreate('theme_is_dark', _isDark); } catch (_e) {}
   }
 
   /** onConfigurationUpdate 回调：已知系统实际模式 */

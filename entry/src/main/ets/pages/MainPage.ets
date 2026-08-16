@@ -1,5 +1,5 @@
-// MainPage.ets — 云上商工 主页（HdsNavigation 沉浸导航 + HdsTabs 底部导航）
-// 移植自 Authenticator-main 的沉浸式 UI：HdsNavigation 标题栏（系统材质+渐变模糊+深浅色）
+// MainPage.ets — Hi商工 主页（HdsNavigation 沉浸导航 + HdsTabs 底部导航）
+// 沉浸式 UI：HdsNavigation 标题栏（系统材质+渐变模糊+深浅色）
 import {
   HdsNavigation,
   HdsNavigationMenuContentOptions,
@@ -15,8 +15,11 @@ import { router } from '@kit.ArkUI';
 import { PreferenceUtil } from '../utils/PreferenceUtil';
 import { SqgService } from '../services/SqgService';
 import { MaterialConfig } from '../utils/MaterialConfig';
+import { BackgroundManager, BackgroundLayer } from '../utils/BackgroundManager';
 import { HomeTab } from './tabs/HomeTab';
 import { ServiceTab } from './tabs/ServiceTab';
+import { MessageTab } from './tabs/MessageTab';
+import { ScheduleTab } from './tabs/ScheduleTab';
 import { MineTab } from './tabs/MineTab';
 import { SettingsPage } from './SettingsPage';
 import { AccountSecurityPage } from './AccountSecurityPage';
@@ -24,8 +27,11 @@ import { ServiceWebPage } from './ServiceWebPage';
 import { ClassTablePage } from './ClassTablePage';
 import { ProfileCenterPage } from './ProfileCenterPage';
 import { AppearancePage } from './AppearancePage';
+import { DeclarationPage } from './DeclarationPage';
 
 const TAG = 'MainPage';
+
+const HOME_TITLE_HEIGHT: number = 56;
 
 interface TabItem {
   normal: SymbolGlyphModifier;
@@ -33,32 +39,17 @@ interface TabItem {
   label: string;
 }
 
-const TAB_CONFIG: TabItem[] = [
-  {
-    normal: new SymbolGlyphModifier($r('sys.symbol.house_fill')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.house_fill')).fontColor([$r('sys.color.ohos_id_color_activated')]),
-    label: '首页'
-  },
-  {
-    normal: new SymbolGlyphModifier($r('sys.symbol.square_grid_2x2')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.square_grid_2x2')).fontColor([$r('sys.color.ohos_id_color_activated')]),
-    label: '服务'
-  },
-  {
-    normal: new SymbolGlyphModifier($r('sys.symbol.message_fill')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.message_fill')).fontColor([$r('sys.color.ohos_id_color_activated')]),
-    label: '消息'
-  },
-  {
-    normal: new SymbolGlyphModifier($r('sys.symbol.calendar')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.calendar')).fontColor([$r('sys.color.ohos_id_color_activated')]),
-    label: '日程'
-  },
-  {
-    normal: new SymbolGlyphModifier($r('sys.symbol.person_fill')).fontColor([$r('sys.color.ohos_id_color_bottom_tab_icon_off')]),
-    selected: new SymbolGlyphModifier($r('sys.symbol.person_fill')).fontColor([$r('sys.color.ohos_id_color_activated')]),
-    label: '我的'
-  }
+interface TabSymbolItem {
+  symbol: Resource;
+  label: string;
+}
+
+const TAB_ITEMS: TabSymbolItem[] = [
+  { symbol: $r('sys.symbol.house'), label: '首页' },
+  { symbol: $r('sys.symbol.square_grid_2x2'), label: '服务' },
+  { symbol: $r('sys.symbol.message'), label: '消息' },
+  { symbol: $r('sys.symbol.calendar'), label: '日程' },
+  { symbol: $r('sys.symbol.person'), label: '我的' }
 ]
 
 @Entry
@@ -68,37 +59,48 @@ struct MainPage {
   @State currentIndex: number = 0;
   @State serviceTabFocus: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
+  @StorageProp('statusBarHeight') statusBarHeight: number = 0;
+  @StorageProp('home_switch_tab_signal') @Watch('onHomeSwitchTabSignal') homeSwitchTabSignal: number = 0;
   private hdsTabsController: HdsTabsController = new HdsTabsController();
+
+  // 首页"更多"按钮发来信号：切到对应 Tab（index 1 = 服务）
+  private onHomeSwitchTabSignal(): void {
+    const target: number = this.homeSwitchTabSignal;
+    if (target <= 0) {
+      return;
+    }
+    try {
+      this.hdsTabsController.changeIndex(target);
+    } catch (e) {
+    }
+    AppStorage.setOrCreate<number>('home_switch_tab_signal', 0);
+  }
 
   // 按当前 tab 返回标题栏标题（"我的"页显示"我的"）
   private currentHomeTitle(): string {
-    const titles: string[] = ['云上商工', '服务', '消息', '日程', '我的'];
+    const titles: string[] = ['Hi商工', '服务', '消息', '日程', '我的'];
     return titles[this.currentIndex];
   }
 
-  // 按当前 tab 返回右上角菜单（"我的"页无菜单）
+  // 移除右上角设置菜单
   private homeMenu(): HdsNavigationMenuContentOptions {
-    if (this.currentIndex === 4) {
-      return { value: [], maxCount: 0 };
-    }
-    return {
-      value: [
-        {
-          content: {
-            icon: $r('sys.symbol.gearshape'),
-            label: '设置',
-            action: () => {
-              this.pageStack.pushPathByName('SettingsPage', undefined);
-            }
-          }
-        }
-      ],
-      maxCount: 1
-    };
+    return { value: [], maxCount: 0 };
   }
 
-  private pageBackgroundColor(): string {
-    return this.themeIsDark ? '#000000' : '#F2F3F5';
+  // 底栏图标颜色：浅色模式未选中用纯黑（原灰色看不清），选中用系统强调色；深色模式用系统色
+  private tabItems(): TabItem[] {
+    const items: TabItem[] = [];
+    for (let i = 0; i < TAB_ITEMS.length; i++) {
+      const normalColor: ResourceColor = this.themeIsDark
+        ? '#FFFFFF'
+        : '#000000';
+      const normal = new SymbolGlyphModifier(TAB_ITEMS[i].symbol).fontColor([normalColor]);
+      const selected = new SymbolGlyphModifier(TAB_ITEMS[i].symbol)
+        .fontColor([$r('sys.color.ohos_id_color_activated')]);
+      const item: TabItem = { normal: normal, selected: selected, label: TAB_ITEMS[i].label };
+      items.push(item);
+    }
+    return items;
   }
 
   private configuredMaterialType(): hdsMaterial.MaterialType {
@@ -118,10 +120,8 @@ struct MainPage {
     });
   }
 
-  private logout(): void {
-    SqgService.getInstance().clearUserData().catch(() => {
-    });
-    PreferenceUtil.putBool('is_logged_in', false);
+  private async logout(): Promise<void> {
+    await SqgService.getInstance().logout();
     router.replaceUrl({ url: 'pages/login/LoginPage' });
   }
 
@@ -140,58 +140,50 @@ struct MainPage {
       ProfileCenterPage()
     } else if (name === 'AppearancePage') {
       AppearancePage()
+    } else if (name === 'DeclarationPage') {
+      DeclarationPage()
     }
   }
 
   @Builder
-  PlaceholderTab(text: string) {
-    Column() {
-      Text(text).fontSize(16).fontColor(this.themeIsDark ? '#FFFFFF' : '#666666')
-    }
-    .width('100%').height('100%')
-    .justifyContent(FlexAlign.Center)
-  }
-
   build() {
     Stack() {
+      BackgroundLayer()
       HdsNavigation(this.pageStack) {
         HdsTabs({ controller: this.hdsTabsController }) {
           TabContent() {
-            HomeTab({ onMoreClick: (): void => {
-              this.currentIndex = 1;
-              this.hdsTabsController.changeIndex(1);
-            }, onBellClick: (): void => {
-              this.currentIndex = 2;
-              this.hdsTabsController.changeIndex(2);
-            } })
+            HomeTab()
           }
-          .tabBar(new BottomTabBarStyle({ normal: TAB_CONFIG[0].normal, selected: TAB_CONFIG[0].selected }, TAB_CONFIG[0].label))
+          .tabBar(new BottomTabBarStyle({ normal: this.tabItems()[0].normal, selected: this.tabItems()[0].selected }, this.tabItems()[0].label))
 
           TabContent() {
             ServiceTab({ searchFocusSignal: this.serviceTabFocus })
           }
-          .tabBar(new BottomTabBarStyle({ normal: TAB_CONFIG[1].normal, selected: TAB_CONFIG[1].selected }, TAB_CONFIG[1].label))
+          .tabBar(new BottomTabBarStyle({ normal: this.tabItems()[1].normal, selected: this.tabItems()[1].selected }, this.tabItems()[1].label))
 
           TabContent() {
-            this.PlaceholderTab('消息')
+            MessageTab()
           }
-          .tabBar(new BottomTabBarStyle({ normal: TAB_CONFIG[2].normal, selected: TAB_CONFIG[2].selected }, TAB_CONFIG[2].label))
+          .tabBar(new BottomTabBarStyle({ normal: this.tabItems()[2].normal, selected: this.tabItems()[2].selected }, this.tabItems()[2].label))
 
           TabContent() {
-            this.PlaceholderTab('日程')
+            ScheduleTab()
           }
-          .tabBar(new BottomTabBarStyle({ normal: TAB_CONFIG[3].normal, selected: TAB_CONFIG[3].selected }, TAB_CONFIG[3].label))
+          .tabBar(new BottomTabBarStyle({ normal: this.tabItems()[3].normal, selected: this.tabItems()[3].selected }, this.tabItems()[3].label))
 
           TabContent() {
             MineTab()
           }
-          .tabBar(new BottomTabBarStyle({ normal: TAB_CONFIG[4].normal, selected: TAB_CONFIG[4].selected }, TAB_CONFIG[4].label))
+          .tabBar(new BottomTabBarStyle({ normal: this.tabItems()[4].normal, selected: this.tabItems()[4].selected }, this.tabItems()[4].label))
         }
         .barOverlap(true)
         .vertical(false)
         .barPosition(BarPosition.End)
+        .scrollable(false)
+        .barBackgroundStyle({ maskColor: '#00000000' })
+        .barBackgroundBlurStyle(BlurStyle.NONE)
         .barFloatingStyle({
-          barBottomMargin: 16,
+          barBottomMargin: 24,
           adaptToHandedness: true,
           systemMaterialEffect: {
             materialType: this.configuredMaterialType(),
@@ -237,6 +229,6 @@ struct MainPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.pageBackgroundColor())
+    .backgroundColor(Color.Transparent)
   }
 }

@@ -3,6 +3,14 @@
     {
       "name": "start_window_background",
       "value": "#000000"
+    },
+    {
+      "name": "page_secondary_bg",
+      "value": "#000000"
+    },
+    {
+      "name": "page_secondary_content",
+      "value": "#FFFFFF"
     }
   ]
 }

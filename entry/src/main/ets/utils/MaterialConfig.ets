@@ -1,14 +1,27 @@
-// MaterialConfig.ets — 外观与主题：全局沉浸光感 + 材质类型/等级 配置管理
-// 状态存 AppStorage，供 MainPage（导航栏/卡片材质）与设置页读写
-import { hdsMaterial } from '@kit.UIDesignKit';
+import { hdsMaterial, SystemMaterialParams } from '@kit.UIDesignKit';
+import { PreferenceUtil } from '../utils/PreferenceUtil';
 
 const TAG = 'MaterialConfig';
-const KEY_IMMERSION = 'ui_global_immersion';      // 全局沉浸光感开关
-const KEY_MATERIAL_TYPE = 'ui_material_type';      // 材质类型：自适应/沉浸/无材质
-const KEY_MATERIAL_LEVEL = 'ui_material_level';    // 材质等级：自适应/精致/柔和/平滑
+const KEY_IMMERSION = 'ui_global_immersion';
+const KEY_MATERIAL_TYPE = 'ui_material_type';
+const KEY_MATERIAL_LEVEL = 'ui_material_level';
+
+const PREF_IMMERSION = 'material_immersion';
+const PREF_MATERIAL_TYPE = 'material_type';
+const PREF_MATERIAL_LEVEL = 'material_level';
 
 export class MaterialConfig {
-  // 读取全局沉浸光感开关（默认开）
+  static init(): void {
+    const savedImmersion: boolean = PreferenceUtil.getBool(PREF_IMMERSION, true);
+    AppStorage.setOrCreate<boolean>(KEY_IMMERSION, savedImmersion);
+
+    const savedType: string = PreferenceUtil.getString(PREF_MATERIAL_TYPE, '自适应');
+    AppStorage.setOrCreate<string>(KEY_MATERIAL_TYPE, savedType);
+
+    const savedLevel: string = PreferenceUtil.getString(PREF_MATERIAL_LEVEL, '自适应');
+    AppStorage.setOrCreate<string>(KEY_MATERIAL_LEVEL, savedLevel);
+  }
+
   static globalImmersionEnabled(): boolean {
     const v = AppStorage.get<boolean>(KEY_IMMERSION);
     return v === undefined ? true : v;
@@ -16,15 +29,16 @@ export class MaterialConfig {
 
   static setGlobalImmersion(enabled: boolean): void {
     AppStorage.setOrCreate<boolean>(KEY_IMMERSION, enabled);
+    PreferenceUtil.putBool(PREF_IMMERSION, enabled);
   }
 
-  // 材质类型（存中文字符串）
   static materialTypeName(): string {
     return AppStorage.get<string>(KEY_MATERIAL_TYPE) ?? '自适应';
   }
 
   static setMaterialType(name: string): void {
     AppStorage.setOrCreate<string>(KEY_MATERIAL_TYPE, name);
+    PreferenceUtil.putString(PREF_MATERIAL_TYPE, name);
   }
 
   static materialLevelName(): string {
@@ -33,9 +47,9 @@ export class MaterialConfig {
 
   static setMaterialLevel(name: string): void {
     AppStorage.setOrCreate<string>(KEY_MATERIAL_LEVEL, name);
+    PreferenceUtil.putString(PREF_MATERIAL_LEVEL, name);
   }
 
-  // 字符串 → MaterialType 枚举
   static configuredMaterialType(): hdsMaterial.MaterialType {
     const name: string = MaterialConfig.materialTypeName();
     if (name === '沉浸') {
@@ -47,7 +61,6 @@ export class MaterialConfig {
     return hdsMaterial.MaterialType.ADAPTIVE;
   }
 
-  // 字符串 → MaterialLevel 枚举
   static configuredMaterialLevel(): hdsMaterial.MaterialLevel {
     const name: string = MaterialConfig.materialLevelName();
     if (name === '精致') {
@@ -62,9 +75,17 @@ export class MaterialConfig {
     return hdsMaterial.MaterialLevel.ADAPTIVE;
   }
 
-  // 卡片是否使用玻璃（光感材质）效果
   static shouldUseCardMaterial(): boolean {
     return MaterialConfig.globalImmersionEnabled() &&
       MaterialConfig.configuredMaterialType() !== hdsMaterial.MaterialType.NONE;
+  }
+
+  static systemMaterialEffectParams(): SystemMaterialParams {
+    return {
+      materialType: MaterialConfig.shouldUseCardMaterial()
+        ? MaterialConfig.configuredMaterialType()
+        : hdsMaterial.MaterialType.NONE,
+      materialLevel: MaterialConfig.configuredMaterialLevel()
+    };
   }
 }
