@@ -18,6 +18,7 @@ export struct SettingRowCard {
   @Prop label: string = '';
   @Prop value: string = '';
   @State pressed: boolean = false;
+  @State cardWidth: number = 0;
   action: () => void = () => {
   };
 
@@ -77,7 +78,7 @@ export struct SettingRowCard {
   }
 
   private expandedWidth(): number {
-    return 600 + ROW_HEIGHT * 2;
+    return Math.max(this.cardWidth, 480) + ROW_HEIGHT * 2;
   }
 
   @Builder
@@ -172,6 +173,12 @@ export struct SettingRowCard {
     .animation({ duration: CARD_PRESS_ANIMATION_DURATION, curve: Curve.Friction })
     .onTouch((event: TouchEvent) => {
       this.handleTouch(event.type);
+    })
+    .onAreaChange((oldValue: Area, newValue: Area) => {
+      const w = newValue.width as number;
+      if (w > 0 && Math.abs(w - this.cardWidth) > 1) {
+        this.cardWidth = w;
+      }
     })
     .onClick(() => {
       this.action();

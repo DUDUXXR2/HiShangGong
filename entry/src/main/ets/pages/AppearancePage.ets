@@ -47,6 +47,7 @@ export struct AppearancePage {
   @State materialType: string = '自适应';
   @State materialLevel: string = '自适应';
   @State pressedCardId: string = '';
+  @State pageWidth: number = 0;
 
   aboutToAppear(): void {
     BackgroundManager.init();
@@ -132,10 +133,14 @@ export struct AppearancePage {
 
   // ===== 玻璃光感材质层 =====
 
+  private glassWidth(barHeight: number): number {
+    return Math.max(this.pageWidth, 480) + barHeight * 2;
+  }
+
   @Builder
-  ImmersionMaterialContent() {
+  ImmersionMaterialContent(barHeight: number) {
     Stack()
-      .width(600 + ME_CARD_RADIUS * 2)
+      .width(this.glassWidth(barHeight))
       .height('100%')
       .backgroundColor(Color.Transparent)
       .hitTestBehavior(HitTestMode.None)
@@ -148,12 +153,12 @@ export struct AppearancePage {
         TabContent() {
         }
         .backdropBlur(0)
-        .tabBar(this.ImmersionMaterialContent())
+        .tabBar(this.ImmersionMaterialContent(cardHeight))
         .clip(false)
       }
-      .width(600 + cardRadius * 2)
+      .width(this.glassWidth(cardHeight))
       .height(cardHeight)
-      .barWidth(600 + cardRadius * 2)
+      .barWidth(this.glassWidth(cardHeight))
       .barHeight(cardHeight)
       .barOverlap(true)
       .barPosition(BarPosition.End)
@@ -547,6 +552,12 @@ export struct AppearancePage {
           .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
           .scrollBar(BarState.Off)
           .clip(false)
+          .onAreaChange((oldValue: Area, newValue: Area) => {
+            const w = newValue.width as number;
+            if (w > 0 && Math.abs(w - this.pageWidth) > 1) {
+              this.pageWidth = w;
+            }
+          })
         }
         .mode(NavigationMode.Stack)
         .titleBar({

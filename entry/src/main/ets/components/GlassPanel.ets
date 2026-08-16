@@ -7,6 +7,7 @@ import { MaterialConfig } from '../utils/MaterialConfig';
 export struct GlassPanel {
   @Prop panelHeight: number = 96;
   @Prop panelRadius: number = 16;
+  @State panelWidth: number = 0;
 
   private isDark(): boolean {
     return ThemeColors.isDark;
@@ -37,7 +38,7 @@ export struct GlassPanel {
   }
 
   private expandedWidth(): number {
-    return 600 + this.panelHeight * 2;
+    return Math.max(this.panelWidth, 480) + this.panelHeight * 2;
   }
 
   @Builder
@@ -84,5 +85,11 @@ export struct GlassPanel {
     .clip(true)
     .backgroundColor(this.panelBaseColor(this.panelBackground()))
     .border({ width: this.panelBorderWidth(), color: this.panelBorderColor() })
+    .onAreaChange((oldValue: Area, newValue: Area) => {
+      const w = newValue.width as number;
+      if (w > 0 && Math.abs(w - this.panelWidth) > 1) {
+        this.panelWidth = w;
+      }
+    })
   }
 }

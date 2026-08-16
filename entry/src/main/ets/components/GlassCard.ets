@@ -12,6 +12,7 @@ export struct GlassCard {
   @Prop cardHeight: number = 60;
   @Prop cardRadius: number = 15;
   @BuilderParam content: () => void = this.defaultContent;
+  @State cardWidth: number = 0;
 
   @Builder defaultContent() {
     Column().width('100%')
@@ -46,7 +47,7 @@ export struct GlassCard {
   }
 
   private expandedWidth(cardHeight: number): number {
-    return 600 + cardHeight * 2;
+    return Math.max(this.cardWidth, 480) + cardHeight * 2;
   }
 
   @Builder
@@ -114,5 +115,11 @@ export struct GlassCard {
     .clip(true)
     .backgroundColor(this.cardSurfaceBaseColor(this.cardBackgroundColor()))
     .border({ width: this.cardSurfaceBorderWidth(), color: this.immersionBorderColor() })
+    .onAreaChange((oldValue: Area, newValue: Area) => {
+      const w = newValue.width as number;
+      if (w > 0 && Math.abs(w - this.cardWidth) > 1) {
+        this.cardWidth = w;
+      }
+    })
   }
 }

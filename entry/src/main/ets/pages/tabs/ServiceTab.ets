@@ -4,6 +4,7 @@ import { SqgService } from '../../services/SqgService';
 import { WebPageParam } from '../NavParams';
 import { localIconRes, isColoredIcon } from '../../utils/ServiceIcons';
 import { CloudIconStore } from '../../utils/CloudIcons';
+import { immersiveMaterialSupported } from '../../utils/MaterialKit';
 
 const TAG = 'ServiceTab';
 
@@ -235,31 +236,42 @@ export struct ServiceTab {
 
   @Builder
   TopBar() {
-    Row() {
-      Image($r('app.media.ic_search'))
-        .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-      TextInput({ text: this.searchText, placeholder: '搜索服务', controller: this.searchInputController })
-        .fontSize(14)
-        .fontColor(ThemeColors.textPrimary)
-        .placeholderColor('#90A4AE')
-        .backgroundColor(Color.Transparent)
-        .layoutWeight(1)
-        .margin({ left: 8 })
-        .onChange((v: string) => { this.onSearchChange(v); })
-      if (this.searchText.length > 0) {
-        Image($r('app.media.ic_public_close'))
-          .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-          .onClick(() => { this.clearSearch(); })
-      }
+    if (immersiveMaterialSupported()) {
+      Row() { this.TopBarInner() }
+        .width('100%').height(SEARCH_BAR_HEIGHT)
+        .borderRadius(SEARCH_BAR_HEIGHT / 2)
+        .padding({ left: 16, right: 16 })
+        .systemMaterial(new uiMaterial.ImmersiveMaterial({
+          style: uiMaterial.ImmersiveStyle.THIN,
+          interactive: true,
+          lightEffect: { color: undefined }
+        }))
+    } else {
+      Row() { this.TopBarInner() }
+        .width('100%').height(SEARCH_BAR_HEIGHT)
+        .borderRadius(SEARCH_BAR_HEIGHT / 2)
+        .padding({ left: 16, right: 16 })
+        .backgroundColor(ThemeColors.bgInput)
     }
-    .width('100%').height(SEARCH_BAR_HEIGHT)
-    .borderRadius(SEARCH_BAR_HEIGHT / 2)
-    .padding({ left: 16, right: 16 })
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.THIN,
-      interactive: true,
-      lightEffect: { color: undefined }
-    }))
+  }
+
+  @Builder
+  TopBarInner() {
+    Image($r('app.media.ic_search'))
+      .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
+    TextInput({ text: this.searchText, placeholder: '搜索服务', controller: this.searchInputController })
+      .fontSize(14)
+      .fontColor(ThemeColors.textPrimary)
+      .placeholderColor('#90A4AE')
+      .backgroundColor(Color.Transparent)
+      .layoutWeight(1)
+      .margin({ left: 8 })
+      .onChange((v: string) => { this.onSearchChange(v); })
+    if (this.searchText.length > 0) {
+      Image($r('app.media.ic_public_close'))
+        .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
+        .onClick(() => { this.clearSearch(); })
+    }
   }
 
   @Builder

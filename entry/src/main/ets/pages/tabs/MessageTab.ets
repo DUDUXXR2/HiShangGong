@@ -5,6 +5,7 @@ import { uiMaterial } from '@kit.ArkUI';
 import { ThemeColors } from '../../utils/ThemeColors';
 import { SqgService } from '../../services/SqgService';
 import { WebPageParam } from '../NavParams';
+import { immersiveMaterialSupported } from '../../utils/MaterialKit';
 
 const HOME_TITLE_HEIGHT: number = 56;
 const HOME_NAV_HEIGHT: number = 52;
@@ -202,31 +203,42 @@ export struct MessageTab {
 
   @Builder
   SearchBar() {
-    Row() {
-      Image($r('app.media.ic_search'))
-        .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-      TextInput({ text: this.searchText, placeholder: '搜索消息', controller: this.searchInputController })
-        .fontSize(14)
-        .fontColor(ThemeColors.textPrimary)
-        .placeholderColor('#90A4AE')
-        .backgroundColor(Color.Transparent)
-        .layoutWeight(1)
-        .margin({ left: 8 })
-        .onChange((v: string) => { this.onSearchChange(v); })
-      if (this.searchText.length > 0) {
-        Image($r('app.media.ic_public_close'))
-          .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-          .onClick(() => { this.clearSearch(); })
-      }
+    if (immersiveMaterialSupported()) {
+      Row() { this.SearchBarInner() }
+        .width('100%').height(SEARCH_BAR_HEIGHT)
+        .borderRadius(SEARCH_BAR_HEIGHT / 2)
+        .padding({ left: 16, right: 16 })
+        .systemMaterial(new uiMaterial.ImmersiveMaterial({
+          style: uiMaterial.ImmersiveStyle.THIN,
+          interactive: true,
+          lightEffect: { color: undefined }
+        }))
+    } else {
+      Row() { this.SearchBarInner() }
+        .width('100%').height(SEARCH_BAR_HEIGHT)
+        .borderRadius(SEARCH_BAR_HEIGHT / 2)
+        .padding({ left: 16, right: 16 })
+        .backgroundColor(ThemeColors.bgInput)
     }
-    .width('100%').height(SEARCH_BAR_HEIGHT)
-    .borderRadius(SEARCH_BAR_HEIGHT / 2)
-    .padding({ left: 16, right: 16 })
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.THIN,
-      interactive: true,
-      lightEffect: { color: undefined }
-    }))
+  }
+
+  @Builder
+  SearchBarInner() {
+    Image($r('app.media.ic_search'))
+      .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
+    TextInput({ text: this.searchText, placeholder: '搜索消息', controller: this.searchInputController })
+      .fontSize(14)
+      .fontColor(ThemeColors.textPrimary)
+      .placeholderColor('#90A4AE')
+      .backgroundColor(Color.Transparent)
+      .layoutWeight(1)
+      .margin({ left: 8 })
+      .onChange((v: string) => { this.onSearchChange(v); })
+    if (this.searchText.length > 0) {
+      Image($r('app.media.ic_public_close'))
+        .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
+        .onClick(() => { this.clearSearch(); })
+    }
   }
 
   @Builder
