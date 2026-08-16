@@ -42,11 +42,11 @@ export struct DeclarationPage {
         HdsNavigation() {
           Scroll() {
             Column() {
-              this.SectionTitle('一、应用性质')
-              this.SectionBody('本应用「Hi商工」是个人开发者制作的第三方校园工具，从安卓版移植到鸿蒙系统，非学校官方出品，与学校无任何隶属或授权关系。')
+              this.SectionTitle('一、免责声明')
+              this.SectionBody('本应用「Hi商工」是由个人开发者独立制作的第三方工具，与商丘工学院无任何隶属、授权或合作关系。本应用非学校官方出品，学校不对本应用的内容及运营承担任何责任。')
 
-              this.SectionTitle('二、开发说明')
-              this.SectionBody('本应用由个人开发者基于安卓版逆向移植开发，开发过程中使用了 DeepSeek v4、GLM-5.1 与 Claude Code 等 AI 工具辅助编码。')
+              this.SectionTitle('二、功能说明')
+              this.SectionBody('本应用仅作为启动跳转工具，将用户引导至学校官方网站及官方信息系统（如教务系统、一卡通平台等），以便获取官方发布的课表、成绩、通知等信息。应用本身不生成、不修改任何官方数据。')
 
               this.SectionTitle('三、支付说明')
               this.SectionBody('应用内涉及的缴费、充值等操作（如校园卡、缴电费）均为跳转至学校官方页面完成支付，本应用不直接收款，也不存储任何支付账号与支付信息。')
@@ -56,6 +56,9 @@ export struct DeclarationPage {
               this.SectionBody('2. 应用内展示的课表、成绩、消息等数据均来自学校官方接口，本应用不采集、不存储您的个人数据到开发者服务器。')
               this.SectionBody('3. 本地缓存（如登录状态、已读记录、背景图设置等）仅保存在您的设备本地，卸载应用后即清除。')
               this.SectionBody('4. 消息推送等能力均经由学校官方渠道，本应用不接入任何第三方推送服务。')
+
+              this.SectionTitle('五、开发说明')
+              this.SectionBody('本应用由个人开发者开发，开发过程中使用了 AI 工具辅助编码。')
 
               Blank()
                 .height(24)

@@ -168,17 +168,39 @@ export struct AppearancePage {
     Column() {
       this.DarkModeRow()
       this.CardDivider()
-      this.SelectRow('字体大小', this.fontSize, FONT_SIZE_OPTIONS, (v: string) => {
-        this.fontSize = v;
-        const ctx = this.getUIContext().getHostContext();
-        if (ctx) {
-          ThemeConfig.setFontSize(v, ctx);
-        }
-      })
+      this.FontSizeRow()
     }
     .width('100%')
     .height(ME_ROW_HEIGHT * 2 + 1)
     .padding({ left: 4, right: 2 })
+  }
+
+  @Builder
+  FontSizeRow() {
+    Row() {
+      Text('字体大小').fontSize(15).fontWeight(FontWeight.Medium)
+        .fontColor(this.primaryTextColor()).layoutWeight(1).margin({ left: 16 })
+      Select(FONT_SIZE_OPTIONS)
+        .selected(this.optionIndex(FONT_SIZE_OPTIONS, this.fontSize))
+        .value(this.fontSize)
+        .font({ size: 15, weight: FontWeight.Regular })
+        .fontColor(this.secondaryTextColor())
+        .selectedOptionFont({ size: 15, weight: FontWeight.Regular })
+        .selectedOptionFontColor(this.accentContrastColor())
+        .selectedOptionBgColor(this.accentColor())
+        .margin({ right: 16 })
+        .onSelect((index: number) => {
+          if (index >= 0 && index < FONT_SIZE_OPTIONS.length) {
+            const v: string = String(FONT_SIZE_OPTIONS[index].value);
+            this.fontSize = v;
+            const ctx = this.getUIContext().getHostContext();
+            if (ctx) {
+              ThemeConfig.setFontSize(v, ctx);
+            }
+          }
+        })
+    }
+    .width('100%').height(ME_ROW_HEIGHT).alignItems(VerticalAlign.Center)
   }
 
   @Builder
