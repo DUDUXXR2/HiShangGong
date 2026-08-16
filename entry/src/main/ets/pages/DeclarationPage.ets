@@ -74,6 +74,7 @@ export struct DeclarationPage {
           .align(Alignment.Top)
           .scrollBar(BarState.Off)
           .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+          .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
           .contentStartOffset(this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP)
         }
         .mode(NavigationMode.Stack)

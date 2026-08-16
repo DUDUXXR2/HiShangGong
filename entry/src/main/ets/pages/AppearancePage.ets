@@ -48,6 +48,7 @@ export struct AppearancePage {
   @State materialLevel: string = '自适应';
   @State pressedCardId: string = '';
   @State pageWidth: number = 0;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
 
   aboutToAppear(): void {
     BackgroundManager.init();
@@ -169,8 +170,7 @@ export struct AppearancePage {
         systemMaterialEffect: {
           materialType: MaterialConfig.configuredMaterialType(),
           materialLevel: MaterialConfig.configuredMaterialLevel()
-        },
-        gradientMask: { maskColor: '#09999999' }
+        }
       })
       .backgroundColor(Color.Transparent)
       .hitTestBehavior(HitTestMode.None)

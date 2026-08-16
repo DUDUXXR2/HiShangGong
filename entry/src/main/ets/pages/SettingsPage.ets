@@ -17,6 +17,7 @@ export struct SettingsPage {
   @Consume('pageStack') pageStack: NavPathStack;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
 
   private async logout(): Promise<void> {
     try {

@@ -7,6 +7,8 @@ import { PreferenceUtil } from '../utils/PreferenceUtil';
 import { SqgService } from '../services/SqgService';
 import { BackgroundManager, BackgroundLayer } from '../utils/BackgroundManager';
 import { MaterialConfig } from '../utils/MaterialConfig';
+import { GlassCard } from '../components/GlassCard';
+import { SettingRowCard } from '../components/SettingRowCard';
 
 const TAG = 'ProfileCenterPage';
 
@@ -35,16 +37,6 @@ export struct ProfileCenterPage {
     this.avatarUrl = svc.getPortraitUrl();
   }
 
-  @Builder
-  RowItem(label: string, value: string) {
-    Row() {
-      Text(label).fontSize(15).fontColor(ThemeColors.textPrimary).margin({ left: 20 })
-      Blank()
-      Text(value.length > 0 ? value : '--').fontSize(14).fontColor(ThemeColors.textSecondary).margin({ right: 18 })
-    }
-    .width('100%').height(56).alignItems(VerticalAlign.Center)
-  }
-
   build() {
     NavDestination() {
       Stack({ alignContent: Alignment.Top }) {
@@ -52,41 +44,61 @@ export struct ProfileCenterPage {
         HdsNavigation() {
           Scroll() {
             Column() {
-              // 头像行（右侧显示头像）
-              Row() {
-                Text('头像').fontSize(15).fontColor(ThemeColors.textPrimary).margin({ left: 20 })
-                Blank()
-                Stack() {
-                  if (this.avatarUrl.length > 0) {
-                    Image(this.avatarUrl)
-                      .width(56).height(56).borderRadius(28)
-                      .objectFit(ImageFit.Cover)
-                      .onError(() => {
-                        this.avatarLoadFailed = true;
-                      })
+              // 头像卡（玻璃卡片）
+              GlassCard({ cardHeight: 72, cardRadius: 14 }) {
+                Row() {
+                  Text('头像').fontSize(15).fontColor(ThemeColors.textPrimary)
+                  Blank()
+                  Stack() {
+                    if (this.avatarUrl.length > 0) {
+                      Image(this.avatarUrl)
+                        .width(56).height(56).borderRadius(28)
+                        .objectFit(ImageFit.Cover)
+                        .onError(() => {
+                          this.avatarLoadFailed = true;
+                        })
+                    }
+                    if (this.avatarUrl.length === 0 || this.avatarLoadFailed) {
+                      Text(this.name.length > 0 ? this.name.substring(0, 1) : '?')
+                        .width(56).height(56).borderRadius(28)
+                        .backgroundColor('#E3F2FD').fontSize(24).fontColor('#1565C0')
+                        .textAlign(TextAlign.Center)
+                    }
                   }
-                  if (this.avatarUrl.length === 0 || this.avatarLoadFailed) {
-                    Text(this.name.length > 0 ? this.name.substring(0, 1) : '?')
-                      .width(56).height(56).borderRadius(28)
-                      .backgroundColor('#E3F2FD').fontSize(24).fontColor('#1565C0')
-                      .textAlign(TextAlign.Center)
-                  }
+                  .width(56).height(56)
                 }
-                .width(56).height(56)
-                .margin({ right: 18 })
+                .width('100%').height(72).alignItems(VerticalAlign.Center)
+                .padding({ left: 16, right: 16 })
               }
-              .width('100%').height(72).alignItems(VerticalAlign.Center)
 
-              Divider().color(this.dividerColor()).strokeWidth(0.5).margin({ left: 20, right: 20 })
+              Blank().height(24)
 
-              this.RowItem('姓名', this.name)
-              Divider().color(this.dividerColor()).strokeWidth(0.5).margin({ left: 20, right: 20 })
-              this.RowItem('账号', this.account)
-              Divider().color(this.dividerColor()).strokeWidth(0.5).margin({ left: 20, right: 20 })
-              this.RowItem('账号身份', this.identity)
+              SettingRowCard({
+                icon: $r('app.media.ic_face'),
+                label: '姓名',
+                value: this.name.length > 0 ? this.name : '--'
+              })
+
+              Blank().height(24)
+
+              SettingRowCard({
+                icon: $r('app.media.ic_lock'),
+                label: '账号',
+                value: this.account.length > 0 ? this.account : '--'
+              })
+
+              Blank().height(24)
+
+              SettingRowCard({
+                icon: $r('app.media.ic_document'),
+                label: '账号身份',
+                value: this.identity.length > 0 ? this.identity : '--'
+              })
+
+              Blank().height(24)
             }
             .width('100%')
-            .padding({ left: 0, right: 0, top: PAGE_CARD_GAP, bottom: 24 })
+            .padding({ left: 20, right: 20, top: PAGE_CARD_GAP, bottom: 24 })
             .align(Alignment.Top)
           }
           .width('100%').height('100%')
@@ -123,9 +135,5 @@ export struct ProfileCenterPage {
     }
     .hideTitleBar(true)
     .backgroundColor(BackgroundManager.pageBackgroundColor(this.themeIsDark))
-  }
-
-  private dividerColor(): string {
-    return this.themeIsDark ? '#444444' : '#E6E6E6';
   }
 }

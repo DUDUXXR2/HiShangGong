@@ -26,6 +26,9 @@ export struct ScheduleTab {
   @State loading: boolean = true;
   @State permissionDenied: boolean = false;
   @State newTitle: string = '';
+  // 添加日程的默认时间（可点击选择）
+  @State eventHour: number = 10;
+  @State eventMinute: number = 0;
   // 当前选中日期（毫秒时间戳，当天 00:00）
   @State selectedDate: number = ScheduleTab.startOfToday();
   private textInputController: TextInputController = new TextInputController();
@@ -146,7 +149,28 @@ export struct ScheduleTab {
     this.loadEvents();
   }
 
-  // 添加日程（选中日期 10:00 开始 1 小时）
+  // 选择添加日程的开始时间
+  private showTimePicker(): void {
+    const d: Date = new Date();
+    d.setHours(this.eventHour, this.eventMinute, 0, 0);
+    try {
+      this.getUIContext().showTimePickerDialog({
+        selected: d,
+        onAccept: (value: TimePickerResult) => {
+          this.eventHour = value.hour;
+          this.eventMinute = value.minute;
+        }
+      });
+    } catch (e) {
+    }
+  }
+
+  private fmtEventTime(): string {
+    const p = (n: number): string => (n < 10 ? '0' : '') + n.toString();
+    return p(this.eventHour) + ':' + p(this.eventMinute);
+  }
+
+  // 添加日程（选中日期 + 用户选择的时间开始，默认 1 小时）
   private async addEvent(): Promise<void> {
     const title: string = this.newTitle.trim();
     if (title.length === 0) {
@@ -156,7 +180,7 @@ export struct ScheduleTab {
     try {
       const mgr = calendarManager.getCalendarManager(this.getUIContext().getHostContext());
       const calendar = await mgr.getCalendar();
-      const start: number = this.selectedDate + 10 * 3600 * 1000;
+      const start: number = this.selectedDate + this.eventHour * 3600 * 1000 + this.eventMinute * 60 * 1000;
       await calendar.addEvent({
         type: 0,
         title: title,
@@ -277,9 +301,9 @@ export struct ScheduleTab {
       .padding({ left: HOME_HORIZONTAL_PADDING, right: HOME_HORIZONTAL_PADDING, top: 6 })
       .height(40)
 
-      // 添加日程输入行
+      // 添加日程输入行（含时间选择）
       Row() {
-        TextInput({ text: this.newTitle, placeholder: '添加日程（选中日期10:00开始）', controller: this.textInputController })
+        TextInput({ text: this.newTitle, placeholder: '添加日程（选择开始时间）', controller: this.textInputController })
           .fontSize(14)
           .fontColor(ThemeColors.textPrimary)
           .placeholderColor('#90A4AE')
@@ -289,6 +313,15 @@ export struct ScheduleTab {
           .layoutWeight(1)
           .padding({ left: 16, right: 16 })
           .onChange((v: string) => { this.newTitle = v; })
+        Text(this.fmtEventTime())
+          .fontSize(14)
+          .fontColor(ThemeColors.accent)
+          .fontWeight(FontWeight.Medium)
+          .backgroundColor(ThemeColors.bgInput)
+          .borderRadius(16)
+          .padding({ left: 12, right: 12, top: 9, bottom: 9 })
+          .margin({ left: 8 })
+          .onClick(() => { this.showTimePicker(); })
         Text('添加')
           .fontSize(14)
           .fontColor('#FFFFFF')

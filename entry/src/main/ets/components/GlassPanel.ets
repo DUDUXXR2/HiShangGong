@@ -8,6 +8,7 @@ export struct GlassPanel {
   @Prop panelHeight: number = 96;
   @Prop panelRadius: number = 16;
   @State panelWidth: number = 0;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
 
   private isDark(): boolean {
     return ThemeColors.isDark;
@@ -72,8 +73,7 @@ export struct GlassPanel {
         systemMaterialEffect: {
           materialType: this.configuredMaterialType(),
           materialLevel: this.configuredMaterialLevel()
-        },
-        gradientMask: { maskColor: '#09999999' }
+        }
       })
       .backgroundColor(Color.Transparent)
       .hitTestBehavior(HitTestMode.None)

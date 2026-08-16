@@ -10,6 +10,7 @@ import { WebPageParam } from '../NavParams';
 import { ToastUtil } from '../../utils/ToastUtil';
 import { immersiveMaterialSupported } from '../../utils/MaterialKit';
 import { QuickActionGrid, QuickActionItem } from '../../components/QuickActionGrid';
+import { GlassCard } from '../../components/GlassCard';
 import { localIconRes, isColoredIcon } from '../../utils/ServiceIcons';
 import { CloudIconStore } from '../../utils/CloudIcons';
 import { CloudColumnService } from '../../services/SqgService';
@@ -38,6 +39,7 @@ export struct HomeTab {
   private searchInputController: TextInputController = new TextInputController();
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
 
   // 缴电费/校园卡/扫一扫/日程/更多 用黑白图标（跟随系统深浅色）；其余彩色按钮（PNG）不染色
@@ -260,7 +262,8 @@ export struct HomeTab {
     const low: string = kw.toLowerCase();
     for (let i = 0; i < this.services.length; i++) {
       const it: ServiceItem = this.services[i];
-      if (it.name.toLowerCase().indexOf(low) >= 0 || it.url.toLowerCase().indexOf(low) >= 0) {
+      // 精确搜索：只匹配服务名称，不匹配 url（避免输入 edu 等把含域名的一堆结果都搜出来）
+      if (it.name.toLowerCase().indexOf(low) >= 0) {
         this.searchResults.push(it);
       }
     }
@@ -325,23 +328,27 @@ export struct HomeTab {
 
   @Builder
   SearchResultRow(item: ServiceItem) {
-    Row() {
-      if (item.iconUrl.length > 0) {
-        Image(item.iconUrl).width(40).height(40).objectFit(ImageFit.Contain)
-      } else {
-        Text(item.name.substring(0, Math.min(1, item.name.length)))
-          .width(40).height(40).fontSize(18).fontColor('#FFFFFF').textAlign(TextAlign.Center)
-          .backgroundColor('#2979FF').borderRadius(10)
+    Column() {
+      GlassCard({ cardHeight: 56, cardRadius: 14 }) {
+        Row() {
+          if (item.iconUrl.length > 0) {
+            Image(item.iconUrl).width(40).height(40).objectFit(ImageFit.Contain)
+          } else {
+            Text(item.name.substring(0, Math.min(1, item.name.length)))
+              .width(40).height(40).fontSize(18).fontColor('#FFFFFF').textAlign(TextAlign.Center)
+              .backgroundColor('#2979FF').borderRadius(10)
+          }
+          Text(item.name).fontSize(15).fontColor(ThemeColors.textPrimary)
+            .margin({ left: 12 }).layoutWeight(1).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+          Text('›').fontSize(18).fontColor(ThemeColors.textSecondary).margin({ left: 10, right: 16 })
+        }
+        .width('100%').height(56).alignItems(VerticalAlign.Center)
+        .padding({ left: 12 })
+        .onClick(() => { this.openSearchService(item); })
       }
-      Text(item.name).fontSize(15).fontColor(ThemeColors.textPrimary)
-        .margin({ left: 12 }).layoutWeight(1).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-      Text('›').fontSize(18).fontColor(ThemeColors.textSecondary).margin({ left: 10, right: 16 })
     }
-    .width('100%').height(56).alignItems(VerticalAlign.Center)
-    .padding({ left: 12 })
-    .backgroundColor(ThemeColors.bgCard)
-    .margin({ top: 1 })
-    .onClick(() => { this.openSearchService(item); })
+    .width('100%')
+    .margin({ top: 8 })
   }
 
   build() {

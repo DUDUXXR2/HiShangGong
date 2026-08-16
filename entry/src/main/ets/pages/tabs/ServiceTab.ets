@@ -5,6 +5,7 @@ import { WebPageParam } from '../NavParams';
 import { localIconRes, isColoredIcon } from '../../utils/ServiceIcons';
 import { CloudIconStore } from '../../utils/CloudIcons';
 import { immersiveMaterialSupported } from '../../utils/MaterialKit';
+import { GlassCard } from '../../components/GlassCard';
 
 const TAG = 'ServiceTab';
 
@@ -41,6 +42,7 @@ export struct ServiceTab {
   @State failedIconUrls: string[] = [];
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
   @Prop @Watch('onFocusSignalChange') searchFocusSignal: number = 0;
   private searchInputController: TextInputController = new TextInputController();
   private scroller: Scroller = new Scroller();
@@ -345,39 +347,44 @@ export struct ServiceTab {
 
   @Builder
   SearchResultRow(item: ServiceItem, index: number) {
-    Row() {
-      if (item.iconUrl.length > 0 && !this.cloudIconBroken(item.iconUrl)) {
-        Image(item.iconUrl).width(40).height(40).objectFit(ImageFit.Contain)
-          .onError(() => { this.markCloudIconFailed(item.iconUrl); })
-      } else if (CloudIconStore.iconUrlFor(item.name).length > 0 &&
-        !this.cloudIconBroken(CloudIconStore.iconUrlFor(item.name))) {
-        Image(CloudIconStore.iconUrlFor(item.name)).width(40).height(40).objectFit(ImageFit.Contain)
-          .onError(() => { this.markCloudIconFailed(CloudIconStore.iconUrlFor(item.name)); })
-      } else if (localIconRes(item.name) !== undefined) {
-        if (isColoredIcon(item.name)) {
-          Image(localIconRes(item.name) as Resource).width(40).height(40).objectFit(ImageFit.Contain)
-        } else {
-          Image(localIconRes(item.name) as Resource)
-            .width(40).height(40).fillColor('#2979FF').objectFit(ImageFit.Contain)
+    Column() {
+      GlassCard({ cardHeight: 56, cardRadius: 14 }) {
+        Row() {
+          if (item.iconUrl.length > 0 && !this.cloudIconBroken(item.iconUrl)) {
+            Image(item.iconUrl).width(40).height(40).objectFit(ImageFit.Contain)
+              .onError(() => { this.markCloudIconFailed(item.iconUrl); })
+          } else if (CloudIconStore.iconUrlFor(item.name).length > 0 &&
+            !this.cloudIconBroken(CloudIconStore.iconUrlFor(item.name))) {
+            Image(CloudIconStore.iconUrlFor(item.name)).width(40).height(40).objectFit(ImageFit.Contain)
+              .onError(() => { this.markCloudIconFailed(CloudIconStore.iconUrlFor(item.name)); })
+          } else if (localIconRes(item.name) !== undefined) {
+            if (isColoredIcon(item.name)) {
+              Image(localIconRes(item.name) as Resource).width(40).height(40).objectFit(ImageFit.Contain)
+            } else {
+              Image(localIconRes(item.name) as Resource)
+                .width(40).height(40).fillColor('#2979FF').objectFit(ImageFit.Contain)
+            }
+          } else {
+            Text(item.name.substring(0, Math.min(1, item.name.length)))
+              .width(40).height(40).fontSize(18).fontColor('#FFFFFF').textAlign(TextAlign.Center)
+              .backgroundColor(this.iconColor(index)).borderRadius(10)
+          }
+          Text(item.name).fontSize(15).fontColor(ThemeColors.textPrimary)
+            .margin({ left: 12 }).layoutWeight(1).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+          if (item.recommend) {
+            Text('荐').fontSize(9).fontColor('#FFFFFF').fontWeight(FontWeight.Bold)
+              .backgroundColor('#E53935').borderRadius(6)
+              .width(18).height(16).textAlign(TextAlign.Center)
+          }
+          Text('›').fontSize(18).fontColor(ThemeColors.textSecondary).margin({ left: 10, right: 16 })
         }
-      } else {
-        Text(item.name.substring(0, Math.min(1, item.name.length)))
-          .width(40).height(40).fontSize(18).fontColor('#FFFFFF').textAlign(TextAlign.Center)
-          .backgroundColor(this.iconColor(index)).borderRadius(10)
+        .width('100%').height(56).alignItems(VerticalAlign.Center)
+        .padding({ left: 12 })
+        .onClick(() => { this.openService(item); })
       }
-      Text(item.name).fontSize(15).fontColor(ThemeColors.textPrimary)
-        .margin({ left: 12 }).layoutWeight(1).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-      if (item.recommend) {
-        Text('荐').fontSize(9).fontColor('#FFFFFF').fontWeight(FontWeight.Bold)
-          .backgroundColor('#E53935').borderRadius(6)
-          .width(18).height(16).textAlign(TextAlign.Center)
-      }
-      Text('›').fontSize(18).fontColor(ThemeColors.textSecondary).margin({ left: 10, right: 16 })
     }
-    .width('100%').height(56).alignItems(VerticalAlign.Center)
-    .padding({ left: 12 })
-    .backgroundColor(ThemeColors.bgCard)
-    .onClick(() => { this.openService(item); })
+    .width('100%')
+    .margin({ top: 8 })
   }
 
   build() {
@@ -408,6 +415,7 @@ export struct ServiceTab {
         .padding({ top: this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP + SEARCH_BAR_HEIGHT + PAGE_CARD_GAP })
         .contentEndOffset(this.bottomRectHeight + HOME_NAV_HEIGHT + PAGE_CARD_GAP)
         .scrollBar(BarState.Off)
+        .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .clip(false)
       } else if (this.groups.length === 0) {
         Column() {
@@ -467,7 +475,7 @@ export struct ServiceTab {
         .align(Alignment.Top)
         .contentEndOffset(this.bottomRectHeight + HOME_NAV_HEIGHT + PAGE_CARD_GAP)
         .scrollBar(BarState.Off)
-        .backgroundColor(Color.Transparent)
+        .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .clip(false)
       }
 

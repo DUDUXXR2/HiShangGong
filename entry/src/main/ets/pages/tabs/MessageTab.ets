@@ -6,6 +6,7 @@ import { ThemeColors } from '../../utils/ThemeColors';
 import { SqgService } from '../../services/SqgService';
 import { WebPageParam } from '../NavParams';
 import { immersiveMaterialSupported } from '../../utils/MaterialKit';
+import { GlassCard } from '../../components/GlassCard';
 
 const HOME_TITLE_HEIGHT: number = 56;
 const HOME_NAV_HEIGHT: number = 52;
@@ -42,6 +43,7 @@ export struct MessageTab {
   private searchInputController: TextInputController = new TextInputController();
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
 
   aboutToAppear(): void {
@@ -243,75 +245,78 @@ export struct MessageTab {
 
   @Builder
   MessageRow(item: AppMessage) {
-    Row() {
-      // 消息头像：logo（网络）优先，无则用本地标签 SVG 兜底（对应安卓 /static/biaoqian.png）
-      if (item.logo.length > 0) {
-        Image(item.logo)
-          .width(40).height(40)
-          .borderRadius(20)
-          .objectFit(ImageFit.Cover)
-      } else {
-        Image($r('app.media.ic_msg_tag'))
-          .width(40).height(40)
-          .fillColor('#2979FF')
-          .objectFit(ImageFit.Contain)
-      }
-
-      Column() {
-        // 标题行：左侧 appName，右侧时间 + 未读数（与标题同一行）
+    Column() {
+      GlassCard({ cardHeight: 80, cardRadius: 14 }) {
         Row() {
-          Text(item.appName)
-            .fontSize(14)
-            .fontWeight(FontWeight.Medium)
-            .fontColor(ThemeColors.textPrimary)
-            .layoutWeight(1)
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-          if (item.num > 0) {
-            Text(item.num > 99 ? '99+' : item.num.toString())
-              .fontSize(10)
-              .fontColor(Color.White)
-              .backgroundColor('#E53935')
-              .borderRadius(9)
-              .height(18)
-              .width(item.num > 99 ? 36 : 18)
-              .padding({ left: 5, right: 5 })
-              .textAlign(TextAlign.Center)
-              .margin({ left: 6 })
+          // 消息头像：logo（网络）优先，无则用本地标签 SVG 兜底（对应安卓 /static/biaoqian.png）
+          if (item.logo.length > 0) {
+            Image(item.logo)
+              .width(40).height(40)
+              .borderRadius(20)
+              .objectFit(ImageFit.Cover)
+          } else {
+            Image($r('app.media.ic_msg_tag'))
+              .width(40).height(40)
+              .fillColor('#2979FF')
+              .objectFit(ImageFit.Contain)
           }
-          if (item.time.length > 0) {
-            Text(item.time)
-              .fontSize(11)
-              .fontColor(ThemeColors.textHint)
-              .margin({ left: 10 })
-          }
-        }
-        .width('100%')
-        .alignItems(VerticalAlign.Center)
 
-        if (item.content.length > 0) {
-          Text(item.content)
-            .fontSize(13)
-            .fontColor(ThemeColors.textSecondary)
+          Column() {
+            // 标题行：左侧 appName，右侧时间 + 未读数（与标题同一行）
+            Row() {
+              Text(item.appName)
+                .fontSize(14)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(ThemeColors.textPrimary)
+                .layoutWeight(1)
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+              if (item.num > 0) {
+                Text(item.num > 99 ? '99+' : item.num.toString())
+                  .fontSize(10)
+                  .fontColor(Color.White)
+                  .backgroundColor('#E53935')
+                  .borderRadius(9)
+                  .height(18)
+                  .width(item.num > 99 ? 36 : 18)
+                  .padding({ left: 5, right: 5 })
+                  .textAlign(TextAlign.Center)
+                  .margin({ left: 6 })
+              }
+              if (item.time.length > 0) {
+                Text(item.time)
+                  .fontSize(11)
+                  .fontColor(ThemeColors.textHint)
+                  .margin({ left: 10 })
+              }
+            }
             .width('100%')
-            .maxLines(2)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .margin({ top: 4 })
+            .alignItems(VerticalAlign.Center)
+
+            if (item.content.length > 0) {
+              Text(item.content)
+                .fontSize(13)
+                .fontColor(ThemeColors.textSecondary)
+                .width('100%')
+                .maxLines(2)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                .margin({ top: 4 })
+            }
+          }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start)
+          .margin({ left: 12 })
         }
+        .width('100%').height(80)
+        .padding({ left: 16, right: 16 })
+        .alignItems(VerticalAlign.Center)
+        .onClick(() => {
+          this.openMessage(item);
+        })
       }
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
-      .margin({ left: 12 })
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 14, bottom: 14 })
-    .alignItems(VerticalAlign.Center)
-    .backgroundColor(ThemeColors.bgCard)
-    .borderRadius(12)
     .margin({ bottom: PAGE_CARD_GAP })
-    .onClick(() => {
-      this.openMessage(item);
-    })
   }
 
   // 点击消息：打开详情（对应安卓 jumpTo）
@@ -396,6 +401,7 @@ export struct MessageTab {
         .padding({ top: this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP + SEARCH_BAR_HEIGHT + PAGE_CARD_GAP })
         .contentEndOffset(this.bottomRectHeight + HOME_NAV_HEIGHT + PAGE_CARD_GAP)
         .scrollBar(BarState.Off)
+        .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .clip(false)
       } else if (this.groups.length === 0) {
         Column() {
@@ -444,6 +450,7 @@ export struct MessageTab {
         .padding({ top: this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP + SEARCH_BAR_HEIGHT + PAGE_CARD_GAP })
         .contentEndOffset(this.bottomRectHeight + HOME_NAV_HEIGHT + PAGE_CARD_GAP)
         .scrollBar(BarState.Off)
+        .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
         .clip(false)
       }
 

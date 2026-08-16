@@ -62,6 +62,7 @@ export struct MineTab {
   @Consume('pageStack') pageStack: NavPathStack;
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
   @State name: string = '';
   @State account: string = '';
@@ -324,8 +325,7 @@ export struct MineTab {
         systemMaterialEffect: {
           materialType: this.configuredMaterialType(),
           materialLevel: this.configuredMaterialLevel()
-        },
-        gradientMask: { maskColor: '#09999999' }
+        }
       })
       .backgroundColor(Color.Transparent)
       .hitTestBehavior(HitTestMode.None)

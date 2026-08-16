@@ -19,6 +19,7 @@ export struct SettingRowCard {
   @Prop value: string = '';
   @State pressed: boolean = false;
   @State cardWidth: number = 0;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
   action: () => void = () => {
   };
 
@@ -113,8 +114,7 @@ export struct SettingRowCard {
         systemMaterialEffect: {
           materialType: this.configuredMaterialType(),
           materialLevel: this.configuredMaterialLevel()
-        },
-        gradientMask: { maskColor: '#09999999' }
+        }
       })
       .backgroundColor(Color.Transparent)
       .hitTestBehavior(HitTestMode.None)

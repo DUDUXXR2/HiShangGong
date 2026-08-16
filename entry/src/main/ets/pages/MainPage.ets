@@ -61,6 +61,7 @@ struct MainPage {
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageProp('home_switch_tab_signal') @Watch('onHomeSwitchTabSignal') homeSwitchTabSignal: number = 0;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
   private hdsTabsController: HdsTabsController = new HdsTabsController();
 
   // 首页"更多"按钮发来信号：切到对应 Tab（index 1 = 服务）

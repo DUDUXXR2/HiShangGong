@@ -7,6 +7,7 @@ import { MaterialConfig } from '../utils/MaterialConfig';
 @Component
 export struct SettingsPanel {
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
+  @StorageProp('ui_material_version') materialVersion: number = 0;
   onAccountClick: () => void = () => {
   };
   onDeclarationClick: () => void = () => {

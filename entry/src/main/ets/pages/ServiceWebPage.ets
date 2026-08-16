@@ -1,6 +1,6 @@
 import web_webview from '@ohos.web.webview';
 import { common } from '@kit.AbilityKit';
-import { HdsNavigation, HdsNavigationTitleMode, ScrollEffectType, BlurStrategy, hdsMaterial } from '@kit.UIDesignKit';
+import { systemShare } from '@kit.ShareKit';
 import { ThemeColors } from '../utils/ThemeColors';
 import { PreferenceUtil } from '../utils/PreferenceUtil';
 import { HttpUtil } from '../utils/HttpUtil';
@@ -10,7 +10,7 @@ import StatusBarUtil from '../utils/StatusBarUtil';
 import { ImmersionButton } from '@tangs/components';
 import { ActionButtonModifier } from '../components/ImmersionActionButton';
 import { MaterialConfig } from '../utils/MaterialConfig';
-import { BackgroundManager, BackgroundLayer } from '../utils/BackgroundManager';
+import { BackgroundManager } from '../utils/BackgroundManager';
 
 const HOME_TITLE_HEIGHT: number = 56;
 const PAGE_CARD_GAP: number = 10;
@@ -150,116 +150,130 @@ export struct ServiceWebPage {
     return false;
   }
 
+  // 右上角分享：调用系统分享面板，分享当前网页链接
+  private async shareCurrentPage(): Promise<void> {
+    const target: string = this.url;
+    if (target.length === 0) {
+      return;
+    }
+    try {
+      const record: systemShare.SharedRecord = {
+        utd: 'general.url',
+        content: target,
+        title: this.title
+      };
+      const data: systemShare.SharedData = new systemShare.SharedData(record);
+      const controller = new systemShare.ShareController(data);
+      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      if (ctx) {
+        await controller.show(ctx, {});
+      }
+    } catch (e) {
+      // 用户取消或系统分享失败时忽略
+    }
+  }
+
   build() {
     NavDestination() {
       Stack() {
-        if (this.isMovieBar()) {
-          BackgroundLayer()
-        }
-        HdsNavigation() {
-          Column() {
-            // 非影吧功能页：内容从标题栏下方开始（Web 是原生渲染，padding 不会下移网页内容，必须用布局占位）
-            if (!this.isMovieBar()) {
-              Blank()
-                .width('100%')
-                .height(this.statusBarHeight + HOME_TITLE_HEIGHT + PAGE_CARD_GAP)
-            }
-            if (this.url.length > 0) {
-              Web({ src: '', controller: this.webController })
-                .width('100%')
-                .layoutWeight(1)
-                .javaScriptAccess(true)
-                .domStorageAccess(true)
-                .onLoadIntercept((event) => {
-                  let url: string = '';
-                  try {
-                    url = event.data.getRequestUrl();
-                  } catch (e) {
-                  }
-                  return this.interceptExternalScheme(url);
-                })
-                .javaScriptProxy({
-                  object: this.bridge,
-                  methodList: ['updateStatusBar'],
-                  name: 'etsBridge',
-                  controller: this.webController
-                })
-                .onPageBegin(() => {
-                  this.isLoading = true;
-                })
-                .onPageEnd(() => {
-                  this.isLoading = false;
-                  this.pullTopColor();
-                })
-                .onScroll(() => {
-                  if (this.scrollTimer >= 0) {
-                    clearTimeout(this.scrollTimer);
-                  }
-                  this.scrollTimer = setTimeout(() => {
-                    this.pullTopColor();
-                    this.scrollTimer = -1;
-                  }, 50);
-                })
-                .onErrorReceive(() => {
-                  this.isLoading = false;
-                  this.loadError = '页面加载失败';
-                })
-            } else {
-              Column() {
-                Text('未提供网页地址').fontSize(14).fontColor(ThemeColors.textSecondary)
+        // Web 全屏沉浸（底层，内容延伸到状态栏下方）
+        if (this.url.length > 0) {
+          Web({ src: "", controller: this.webController })
+            .width("100%").height("100%")
+            .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+            .javaScriptAccess(true)
+            .domStorageAccess(true)
+            .onLoadIntercept((event) => {
+              let url: string = "";
+              try {
+                url = event.data.getRequestUrl();
+              } catch (e) {
               }
-              .width('100%')
-              .layoutWeight(1)
-              .justifyContent(FlexAlign.Center)
-            }
-          }
-          .width('100%').height('100%')
-        }
-        .mode(NavigationMode.Stack)
-        .titleBar({
-          content: {
-            title: { mainTitle: this.title },
-            backIcon: { action: (): void => { this.goBack(); } }
-          },
-          style: this.isMovieBar()
-            ? {
-                scrollEffectOpts: {
-                  enableScrollEffect: false,
-                  scrollEffectType: ScrollEffectType.GRADIENT_BLUR
-                },
-                blurStrategy: BlurStrategy.ADAPTIVE,
-                originalStyle: { backgroundStyle: { backgroundColor: '#00ffffff' } },
-                scrollEffectStyle: { backgroundStyle: { backgroundColor: '#00ffffff' } },
-                systemMaterialEffect: MaterialConfig.systemMaterialEffectParams()
-              }
-            : {
-                scrollEffectOpts: {
-                  enableScrollEffect: false,
-                  scrollEffectType: ScrollEffectType.GRADIENT_BLUR
-                },
-                blurStrategy: BlurStrategy.DISABLE,
-                originalStyle: { backgroundStyle: { backgroundColor: $r('app.color.page_secondary_bg') } },
-                scrollEffectStyle: { backgroundStyle: { backgroundColor: $r('app.color.page_secondary_bg') } },
-                systemMaterialEffect: {
-                  materialType: hdsMaterial.MaterialType.NONE,
-                  materialLevel: MaterialConfig.configuredMaterialLevel()
+              return this.interceptExternalScheme(url);
+            })
+            .javaScriptProxy({
+              object: this.bridge,
+              methodList: ["updateStatusBar"],
+              name: "etsBridge",
+              controller: this.webController
+            })
+            .onPageBegin(() => {
+              this.isLoading = true;
+            })
+            .onPageEnd(() => {
+              this.isLoading = false;
+              this.pullTopColor();
+            })
+            .onTitleReceive((event) => {
+              try {
+                const t: string = event.title;
+                if (t.length > 0) {
+                  this.title = t;
                 }
-              },
-          avoidLayoutSafeArea: true,
-          enableComponentSafeArea: false
-        })
-        .hideBackButton(false)
-        .titleMode(HdsNavigationTitleMode.MINI)
-        .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP])
-        .width('100%').height('100%')
+              } catch (e) {
+              }
+            })
+            .onScroll(() => {
+              if (this.scrollTimer >= 0) {
+                clearTimeout(this.scrollTimer);
+              }
+              this.scrollTimer = setTimeout(() => {
+                this.pullTopColor();
+                this.scrollTimer = -1;
+              }, 50);
+            })
+            .onErrorReceive(() => {
+              this.isLoading = false;
+              this.loadError = "页面加载失败";
+            })
+        } else {
+          Column() {
+            Text("未提供网页地址").fontSize(14).fontColor(ThemeColors.textSecondary)
+          }
+          .width("100%").height("100%")
+          .justifyContent(FlexAlign.Center)
+        }
+
+        // 悬浮按钮栏（顶层，避开状态栏，沉浸光感）
+        Row() {
+          Stack({ alignContent: Alignment.Center }) {
+            Image($r("app.media.ic_public_arrow_left"))
+              .width(18).height(18)
+              .fillColor("#FFFFFF")
+              .objectFit(ImageFit.Contain)
+          }
+          .width(40).height(40)
+          .borderRadius(20)
+          .backgroundColor("#66000000")
+          .backdropBlur(12)
+          .onClick(() => { this.goBack(); })
+
+          Blank()
+
+          Stack({ alignContent: Alignment.Center }) {
+            Image($r("app.media.ic_public_share"))
+              .width(18).height(18)
+              .fillColor("#FFFFFF")
+              .objectFit(ImageFit.Contain)
+          }
+          .width(40).height(40)
+          .borderRadius(20)
+          .backgroundColor("#66000000")
+          .backdropBlur(12)
+          .onClick(() => { this.shareCurrentPage(); })
+        }
+        .width("100%")
+        .padding({ top: this.statusBarHeight + 8, left: 12, right: 12 })
+        .position({ x: 0, y: 0 })
+        .zIndex(20)
 
         if (this.isLoading) {
-          LoadingProgress().width(36).height(36).color('#2979FF')
+          LoadingProgress().width(36).height(36).color("#2979FF")
         }
 
         if (this.loadError.length > 0) {
           Column() {
-            Text(this.loadError).fontSize(13).fontColor('#C62828').padding(12)
+            Text(this.loadError).fontSize(13).fontColor("#C62828").padding(12)
             Stack({ alignContent: Alignment.Center }) {
               ImmersionButton({
                 systemMaterialEffect: {
@@ -269,7 +283,7 @@ export struct ServiceWebPage {
                 buttonModify: new ActionButtonModifier(80, 36, ThemeColors.bgInput, ThemeColors.border),
                 click: (): void => { this.loadWithAuth(); }
               }) {
-                Text('重试')
+                Text("重试")
                   .fontSize(13)
                   .fontWeight(FontWeight.Medium)
                   .fontColor(ThemeColors.textPrimary)
@@ -280,17 +294,16 @@ export struct ServiceWebPage {
             .borderRadius(18)
             .clip(false)
           }
-          .width('100%')
+          .width("100%")
         }
       }
-      .width('100%').height('100%')
-      .backgroundColor(this.isMovieBar() ? Color.Transparent : $r('app.color.page_secondary_bg'))
-      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+      .width("100%").height("100%")
+      .backgroundColor(this.isMovieBar() ? Color.Transparent : $r("app.color.page_secondary_bg"))
     }
     .hideTitleBar(true)
     .backgroundColor(this.isMovieBar()
       ? BackgroundManager.pageBackgroundColor(this.themeIsDark)
-      : $r('app.color.page_secondary_bg'))
+      : $r("app.color.page_secondary_bg"))
     .onBackPressed(() => {
       this.goBack();
       return true;
@@ -322,8 +335,9 @@ export struct ServiceWebPage {
         }
         const c = StatusBarUtil.rgbToHex(result);
         if (c.length > 0) {
-          // 状态栏保持透明（模糊标题栏透出），不按网页背景染色
-          StatusBarUtil.resetStatusBar();
+          // 状态栏透明（网页内容透出，取页面顶端色彩）+ 按顶端亮度自适应文字颜色
+          const textColor: string = StatusBarUtil.textColorForBg(c);
+          StatusBarUtil.setStatusBarColor('#00000000', textColor);
         }
       });
     } catch (e) {

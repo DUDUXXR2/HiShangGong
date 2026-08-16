@@ -13,6 +13,8 @@ export struct GlassCard {
   @Prop cardRadius: number = 15;
   @BuilderParam content: () => void = this.defaultContent;
   @State cardWidth: number = 0;
+  // 材质设置变更时触发重新渲染（全局即时生效）
+  @StorageProp('ui_material_version') materialVersion: number = 0;
 
   @Builder defaultContent() {
     Column().width('100%')
@@ -82,8 +84,7 @@ export struct GlassCard {
         systemMaterialEffect: {
           materialType: this.configuredMaterialType(),
           materialLevel: this.configuredMaterialLevel()
-        },
-        gradientMask: { maskColor: '#09999999' }
+        }
       })
       .backgroundColor(Color.Transparent)
       .hitTestBehavior(HitTestMode.None)

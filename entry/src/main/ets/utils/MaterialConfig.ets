@@ -6,6 +6,7 @@ const TAG = 'MaterialConfig';
 const KEY_IMMERSION = 'ui_global_immersion';      // 全局沉浸光感开关
 const KEY_MATERIAL_TYPE = 'ui_material_type';      // 材质类型：自适应/沉浸/无材质
 const KEY_MATERIAL_LEVEL = 'ui_material_level';    // 材质等级：自适应/精致/柔和/平滑
+const KEY_MATERIAL_VERSION = 'ui_material_version'; // 版本号：改动后组件响应式刷新
 
 export class MaterialConfig {
   // 读取全局沉浸光感开关（默认开）
@@ -16,6 +17,7 @@ export class MaterialConfig {
 
   static setGlobalImmersion(enabled: boolean): void {
     AppStorage.setOrCreate<boolean>(KEY_IMMERSION, enabled);
+    MaterialConfig.bumpVersion();
   }
 
   // 材质类型（存中文字符串）
@@ -25,6 +27,7 @@ export class MaterialConfig {
 
   static setMaterialType(name: string): void {
     AppStorage.setOrCreate<string>(KEY_MATERIAL_TYPE, name);
+    MaterialConfig.bumpVersion();
   }
 
   static materialLevelName(): string {
@@ -33,6 +36,17 @@ export class MaterialConfig {
 
   static setMaterialLevel(name: string): void {
     AppStorage.setOrCreate<string>(KEY_MATERIAL_LEVEL, name);
+    MaterialConfig.bumpVersion();
+  }
+
+  // 材质版本号：设置改动时 +1，触发绑定组件响应式刷新
+  static materialVersion(): number {
+    return AppStorage.get<number>(KEY_MATERIAL_VERSION) ?? 0;
+  }
+
+  private static bumpVersion(): void {
+    const v = MaterialConfig.materialVersion() + 1;
+    AppStorage.setOrCreate<number>(KEY_MATERIAL_VERSION, v);
   }
 
   // 字符串 → MaterialType 枚举
