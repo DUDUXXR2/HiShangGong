@@ -416,6 +416,7 @@ export struct ServiceTab {
         .contentEndOffset(this.bottomRectHeight + HOME_NAV_HEIGHT + PAGE_CARD_GAP)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+        .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
         .clip(false)
       } else if (this.groups.length === 0) {
         Column() {
@@ -476,6 +477,7 @@ export struct ServiceTab {
         .contentEndOffset(this.bottomRectHeight + HOME_NAV_HEIGHT + PAGE_CARD_GAP)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+        .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
         .clip(false)
       }
 
