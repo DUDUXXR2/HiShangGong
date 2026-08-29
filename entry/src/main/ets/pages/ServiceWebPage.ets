@@ -204,87 +204,92 @@ export struct ServiceWebPage {
         .height(this.statusBarHeight + FLOATING_BTN_SIZE + 16)
         .backgroundColor(this.themeIsDark ? '#000000' : '#FFFFFF')
 
-        Web({ src: '', controller: this.webController })
-          .width('100%')
-          .layoutWeight(1)
-          .javaScriptAccess(true)
-          .domStorageAccess(true)
-          .onLoadIntercept((event) => {
-            let url: string = '';
-            try {
-              url = event.data.getRequestUrl();
-            } catch (e) {
-            }
-            return this.interceptExternalScheme(url);
-          })
-          .javaScriptProxy({
-            object: this.bridge,
-            methodList: ['updateStatusBar'],
-            name: 'etsBridge',
-            controller: this.webController
-          })
-          .onPageBegin(() => {
-            this.isLoading = true;
-            try {
-              const domain: string = this.hostOf(this.currentUrl.length > 0 ? this.currentUrl : this.url);
-              if (domain.length > 0) {
-                const cookies: string = HttpUtil.getInstance().getCookiesForDomain(domain);
-                if (cookies.length > 0) {
-                  web_webview.WebCookieManager.configCookieSync('https://' + domain, cookies + '; Path=/', false, true);
-                }
-                const token: string = PreferenceUtil.getString('id_token');
-                const isTrusted: boolean = this.isInCasArry(this.currentUrl.length > 0 ? this.currentUrl : this.url);
-                if (isTrusted && token.length > 0) {
-                  web_webview.WebCookieManager.configCookieSync('https://' + domain, 'X-Id-Token=' + token + '; Path=/', false, true);
-                }
-                web_webview.WebCookieManager.saveCookieAsync();
+        Stack() {
+          Web({ src: '', controller: this.webController })
+            .width('100%')
+            .height('100%')
+            .javaScriptAccess(true)
+            .domStorageAccess(true)
+            .backgroundColor(this.themeIsDark ? '#000000' : '#FFFFFF')
+            .onLoadIntercept((event) => {
+              let url: string = '';
+              try {
+                url = event.data.getRequestUrl();
+              } catch (e) {
               }
-            } catch (e) {
-            }
-          })
-          .onPageEnd(() => {
-            this.isLoading = false;
-            try {
-              this.currentUrl = this.webController.getUrl();
-            } catch (e) {
-            }
-          })
-          .onTitleReceive((event) => {
-            if (event.title.length > 0) {
-              this.title = event.title;
-            }
-          })
-          .onErrorReceive(() => {
-            this.isLoading = false;
-            this.loadError = '页面加载失败';
-          })
+              return this.interceptExternalScheme(url);
+            })
+            .javaScriptProxy({
+              object: this.bridge,
+              methodList: ['updateStatusBar'],
+              name: 'etsBridge',
+              controller: this.webController
+            })
+            .onPageBegin(() => {
+              this.isLoading = true;
+              try {
+                const domain: string = this.hostOf(this.currentUrl.length > 0 ? this.currentUrl : this.url);
+                if (domain.length > 0) {
+                  const cookies: string = HttpUtil.getInstance().getCookiesForDomain(domain);
+                  if (cookies.length > 0) {
+                    web_webview.WebCookieManager.configCookieSync('https://' + domain, cookies + '; Path=/', false, true);
+                  }
+                  const token: string = PreferenceUtil.getString('id_token');
+                  const isTrusted: boolean = this.isInCasArry(this.currentUrl.length > 0 ? this.currentUrl : this.url);
+                  if (isTrusted && token.length > 0) {
+                    web_webview.WebCookieManager.configCookieSync('https://' + domain, 'X-Id-Token=' + token + '; Path=/', false, true);
+                  }
+                  web_webview.WebCookieManager.saveCookieAsync();
+                }
+              } catch (e) {
+              }
+            })
+            .onPageEnd(() => {
+              this.isLoading = false;
+              try {
+                this.currentUrl = this.webController.getUrl();
+              } catch (e) {
+              }
+            })
+            .onTitleReceive((event) => {
+              if (event.title.length > 0) {
+                this.title = event.title;
+              }
+            })
+            .onErrorReceive(() => {
+              this.isLoading = false;
+              this.loadError = '页面加载失败';
+            })
 
-        if (this.isLoading) {
-          Column() {
-            LoadingProgress().width(36).height(36).color('#2979FF')
+          if (this.isLoading) {
+            Column() {
+              LoadingProgress().width(36).height(36).color('#2979FF')
+            }
+            .width('100%')
+            .height('100%')
+            .justifyContent(FlexAlign.Center)
+            .backgroundColor(this.themeIsDark ? '#000000' : '#FFFFFF')
           }
-          .width('100%')
-          .layoutWeight(1)
-          .justifyContent(FlexAlign.Center)
-          .backgroundColor(this.themeIsDark ? '#CC000000' : '#CCFFFFFF')
-        }
 
-        if (this.loadError.length > 0) {
-          Column() {
-            Text(this.loadError).fontSize(13).fontColor('#C62828').padding(12)
-            Text('重试')
-              .fontSize(13)
-              .fontWeight(FontWeight.Medium)
-              .fontColor('#2979FF')
-              .padding({ left: 20, right: 20, top: 8, bottom: 8 })
-              .borderRadius(16)
-              .backgroundColor('#FFFFFF')
-              .onClick(() => { this.loadWithAuth(); })
+          if (this.loadError.length > 0) {
+            Column() {
+              Text(this.loadError).fontSize(13).fontColor('#C62828').padding(12)
+              Text('重试')
+                .fontSize(13)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#2979FF')
+                .padding({ left: 20, right: 20, top: 8, bottom: 8 })
+                .borderRadius(16)
+                .backgroundColor('#FFFFFF')
+                .onClick(() => { this.loadWithAuth(); })
+            }
+            .width('100%')
+            .height('100%')
+            .justifyContent(FlexAlign.Center)
+            .backgroundColor(this.themeIsDark ? '#000000' : '#FFFFFF')
           }
-          .width('100%')
-          .layoutWeight(1)
-          .justifyContent(FlexAlign.Center)
         }
+        .layoutWeight(1)
       }
       .width('100%').height('100%')
     }
