@@ -159,13 +159,56 @@ export struct ServiceWebPage {
 
   build() {
     NavDestination() {
-      Stack({ alignContent: Alignment.TopStart }) {
+      Column() {
+        Row() {
+          Stack() {
+            ImmersionButton({
+              systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+              buttonModify: new ActionButtonModifier(FLOATING_BTN_SIZE, FLOATING_BTN_SIZE, Color.Transparent, this.themeIsDark ? '#80FFFFFF' : '#80000000'),
+              click: (): void => { this.goBack(); }
+            }) {
+              SymbolGlyph($r('sys.symbol.chevron_backward'))
+                .fontSize(18)
+                .fontColor([this.themeIsDark ? '#FFFFFF' : '#000000'])
+                .fontWeight(FontWeight.Medium)
+                .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+            }
+          }
+          .width(FLOATING_BTN_SIZE)
+          .height(FLOATING_BTN_SIZE)
+
+          Row().hitTestBehavior(HitTestMode.Transparent).layoutWeight(1).height(1)
+
+          Stack() {
+            ImmersionButton({
+              systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+              buttonModify: new ActionButtonModifier(FLOATING_BTN_SIZE, FLOATING_BTN_SIZE, Color.Transparent, this.themeIsDark ? '#80FFFFFF' : '#80000000'),
+              click: (): void => { this.sharePage(); }
+            }) {
+              SymbolGlyph($r('sys.symbol.share'))
+                .fontSize(16)
+                .fontColor([this.themeIsDark ? '#FFFFFF' : '#000000'])
+                .fontWeight(FontWeight.Medium)
+                .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+            }
+          }
+          .width(FLOATING_BTN_SIZE)
+          .height(FLOATING_BTN_SIZE)
+        }
+        .width('100%')
+        .padding({
+          left: FLOATING_BTN_MARGIN,
+          right: FLOATING_BTN_MARGIN,
+          top: this.statusBarHeight + 8
+        })
+        .height(this.statusBarHeight + FLOATING_BTN_SIZE + 16)
+        .backgroundColor(this.themeIsDark ? '#000000' : '#FFFFFF')
+
         Web({ src: '', controller: this.webController })
           .width('100%')
-          .height('100%')
+          .layoutWeight(1)
           .javaScriptAccess(true)
           .domStorageAccess(true)
-          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
           .onLoadIntercept((event) => {
             let url: string = '';
             try {
@@ -216,64 +259,14 @@ export struct ServiceWebPage {
             this.loadError = '页面加载失败';
           })
 
-        Column() {
-          Row() {
-            Stack() {
-              ImmersionButton({
-                systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
-                buttonModify: new ActionButtonModifier(FLOATING_BTN_SIZE, FLOATING_BTN_SIZE, Color.Transparent, this.themeIsDark ? '#80FFFFFF' : '#80000000'),
-                click: (): void => { this.goBack(); }
-              }) {
-                SymbolGlyph($r('sys.symbol.chevron_backward'))
-                  .fontSize(18)
-                  .fontColor([this.themeIsDark ? '#FFFFFF' : '#000000'])
-                  .fontWeight(FontWeight.Medium)
-                  .renderingStrategy(SymbolRenderingStrategy.SINGLE)
-              }
-            }
-            .width(FLOATING_BTN_SIZE)
-            .height(FLOATING_BTN_SIZE)
-
-            Row().hitTestBehavior(HitTestMode.Transparent).layoutWeight(1).height(1)
-
-            Stack() {
-              ImmersionButton({
-                systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
-                buttonModify: new ActionButtonModifier(FLOATING_BTN_SIZE, FLOATING_BTN_SIZE, Color.Transparent, this.themeIsDark ? '#80FFFFFF' : '#80000000'),
-                click: (): void => { this.sharePage(); }
-              }) {
-                SymbolGlyph($r('sys.symbol.share'))
-                  .fontSize(16)
-                  .fontColor([this.themeIsDark ? '#FFFFFF' : '#000000'])
-                  .fontWeight(FontWeight.Medium)
-                  .renderingStrategy(SymbolRenderingStrategy.SINGLE)
-              }
-            }
-            .width(FLOATING_BTN_SIZE)
-            .height(FLOATING_BTN_SIZE)
-          }
-          .width('100%')
-          .padding({
-            left: FLOATING_BTN_MARGIN,
-            right: FLOATING_BTN_MARGIN,
-            top: this.statusBarHeight + 8
-          })
-          .height(FLOATING_BTN_SIZE)
-        }
-        .width('100%')
-        .height(this.statusBarHeight + FLOATING_BTN_SIZE + 16)
-        .backgroundColor(this.themeIsDark ? '#000000' : '#FFFFFF')
-        .zIndex(10)
-
         if (this.isLoading) {
           Column() {
             LoadingProgress().width(36).height(36).color('#2979FF')
           }
           .width('100%')
-          .height('100%')
+          .layoutWeight(1)
           .justifyContent(FlexAlign.Center)
           .backgroundColor(this.themeIsDark ? '#CC000000' : '#CCFFFFFF')
-          .zIndex(5)
         }
 
         if (this.loadError.length > 0) {
@@ -289,9 +282,8 @@ export struct ServiceWebPage {
               .onClick(() => { this.loadWithAuth(); })
           }
           .width('100%')
-          .height('100%')
+          .layoutWeight(1)
           .justifyContent(FlexAlign.Center)
-          .zIndex(6)
         }
       }
       .width('100%').height('100%')
