@@ -35,7 +35,7 @@ struct LoginPage {
       await SqgService.getInstance().login(uname, this.password);
       this.statusText = '登录成功！';
       setTimeout(() => {
-        router.replaceUrl({ url: 'pages/MainPage' });
+      this.getUIContext().getRouter().replaceUrl({ url: 'pages/MainPage' });
       }, 300);
     } catch (e) {
       this.statusText = '登录失败：' + String(e);

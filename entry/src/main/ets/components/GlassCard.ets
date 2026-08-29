@@ -1,8 +1,3 @@
-// GlassCard.ets — 液态玻璃卡片（复刻 MineTab 的 ImmersionCardSurface）
-// 用法：
-//   GlassCard({ cardHeight: 120 }) {
-//     // 卡片内容
-//   }
 import { HdsTabs, hdsMaterial } from '@kit.UIDesignKit';
 import { ThemeColors } from '../utils/ThemeColors';
 import { MaterialConfig } from '../utils/MaterialConfig';

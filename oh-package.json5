@@ -2,7 +2,6 @@
   "modelVersion": "6.0.2",
   "description": "Please describe the basic information.",
   "dependencies": {
-    "privacy_consent_dialog": "file:./privacy_consent_dialog",
     "@tangs/components": "1.5.3"
   },
   "devDependencies": {

@@ -1,9 +1,9 @@
 import web_webview from '@ohos.web.webview';
 import { common } from '@kit.AbilityKit';
-import { SqgService } from '../services/SqgService';
 import { CAS_ARRY } from '../services/SqgConstants';
 import { HttpUtil } from '../utils/HttpUtil';
 import { PreferenceUtil } from '../utils/PreferenceUtil';
+import { WebPageParam } from './NavParams';
 import StatusBarUtil from '../utils/StatusBarUtil';
 import { BackgroundManager, BackgroundLayer } from '../utils/BackgroundManager';
 import { ImmersionButton } from '@tangs/components';
@@ -23,16 +23,16 @@ class WebHeader {
   }
 }
 
-export class ClassTableBridge {
+export class JwBridge {
   updateStatusBar(barColor: string, textColor: string): void {
     StatusBarUtil.setStatusBarColor(barColor, textColor);
   }
 }
 
 @Component
-export struct ClassTablePage {
+export struct JwWebPage {
   @Consume('pageStack') pageStack: NavPathStack;
-  @State title: string = '课表';
+  @State title: string = '教务';
   @State url: string = '';
   @State isLoading: boolean = true;
   @State loadError: string = '';
@@ -40,12 +40,22 @@ export struct ClassTablePage {
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
   private webController: web_webview.WebviewController = new web_webview.WebviewController();
-  private bridge: ClassTableBridge = new ClassTableBridge();
+  private bridge: JwBridge = new JwBridge();
   private scrollTimer: number = -1;
 
   aboutToAppear(): void {
+    try {
+      const list = this.pageStack.getParamByName('JwWebPage') as WebPageParam[];
+      if (list !== undefined && list !== null && list.length > 0) {
+        const p: WebPageParam = list[0];
+        this.title = p.title.length > 0 ? p.title : '教务';
+        this.url = p.url;
+        this.currentUrl = p.url;
+      }
+    } catch (e) {
+    }
     StatusBarUtil.setStatusBarColor('#00000000', '#FFFFFF');
-    this.loadH5();
+    setTimeout(() => { this.loadWithAuth(); }, 50);
   }
 
   aboutToDisappear(): void {
@@ -53,21 +63,6 @@ export struct ClassTablePage {
     if (this.scrollTimer >= 0) {
       clearTimeout(this.scrollTimer);
       this.scrollTimer = -1;
-    }
-  }
-
-  private async loadH5(): Promise<void> {
-    this.isLoading = true;
-    this.loadError = '';
-    try {
-      const h5 = await SqgService.getInstance().getCourseTableH5Url();
-      this.url = SqgService.getInstance().buildServiceUrl(h5, '');
-      setTimeout(() => { this.loadWithAuth(); }, 50);
-    } catch (e) {
-      this.loadError = '获取课表地址失败：' + String(e);
-      this.url = '';
-    } finally {
-      this.isLoading = false;
     }
   }
 
@@ -110,7 +105,7 @@ export struct ClassTablePage {
   }
 
   private isInCasArry(url: string): boolean {
-    for (let i: number = 0; i < CAS_ARRY.length; i++) {
+    for (let i = 0; i < CAS_ARRY.length; i++) {
       if (url.startsWith(CAS_ARRY[i])) {
         return true;
       }
@@ -279,10 +274,9 @@ export struct ClassTablePage {
           right: FLOATING_BTN_MARGIN,
           top: this.statusBarHeight + 8
         })
-        .height(FLOATING_BTN_SIZE)
         .zIndex(10)
 
-        if (this.isLoading && this.url.length > 0) {
+        if (this.isLoading) {
           Column() {
             LoadingProgress().width(36).height(36).color('#2979FF')
           }
@@ -303,8 +297,7 @@ export struct ClassTablePage {
               .padding({ left: 20, right: 20, top: 8, bottom: 8 })
               .borderRadius(16)
               .backgroundColor('#FFFFFF')
-              .margin({ top: 12 })
-              .onClick(() => { this.loadH5(); })
+              .onClick(() => { this.loadWithAuth(); })
           }
           .width('100%')
           .height('100%')

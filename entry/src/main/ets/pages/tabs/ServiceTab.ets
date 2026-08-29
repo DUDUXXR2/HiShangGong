@@ -1,11 +1,12 @@
-import { uiMaterial } from '@kit.ArkUI';
 import { ThemeColors } from '../../utils/ThemeColors';
 import { SqgService } from '../../services/SqgService';
-import { WebPageParam } from '../NavParams';
+import { WebPageParam, isJwServiceName } from '../NavParams';
 import { localIconRes, isColoredIcon } from '../../utils/ServiceIcons';
 import { CloudIconStore } from '../../utils/CloudIcons';
-import { immersiveMaterialSupported } from '../../utils/MaterialKit';
 import { GlassCard } from '../../components/GlassCard';
+import { ImmersionSearch } from '@tangs/components';
+import { SearchModifier } from '../../components/SearchModifier';
+import { MaterialConfig } from '../../utils/MaterialConfig';
 
 const TAG = 'ServiceTab';
 
@@ -43,7 +44,6 @@ export struct ServiceTab {
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
   @Prop @Watch('onFocusSignalChange') searchFocusSignal: number = 0;
-  private searchInputController: TextInputController = new TextInputController();
   private scroller: Scroller = new Scroller();
   private groupOffsets: number[] = [];
 
@@ -58,10 +58,6 @@ export struct ServiceTab {
   }
 
   focusSearch(): void {
-    try {
-      this.searchInputController.caretPosition(this.searchText.length);
-    } catch (e) {
-    }
   }
 
   private parseGroups(raw: object[] | null): ServiceGroup[] {
@@ -173,7 +169,11 @@ export struct ServiceTab {
       target = 'https://i.sqgxy.edu.cn' + target;
     }
     const finalUrl: string = SqgService.getInstance().buildServiceUrl(target, item.tokenAccept);
-    this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(item.name, finalUrl));
+    if (isJwServiceName(item.name)) {
+      this.pageStack.pushPathByName('JwWebPage', new WebPageParam(item.name, finalUrl));
+    } else {
+      this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(item.name, finalUrl));
+    }
   }
 
   private onTabClick(gIndex: number): void {
@@ -237,42 +237,19 @@ export struct ServiceTab {
 
   @Builder
   TopBar() {
-    if (immersiveMaterialSupported()) {
-      Row() { this.TopBarInner() }
-        .width('100%').height(SEARCH_BAR_HEIGHT)
-        .borderRadius(SEARCH_BAR_HEIGHT / 2)
-        .padding({ left: 16, right: 16 })
-        .systemMaterial(new uiMaterial.ImmersiveMaterial({
-          style: uiMaterial.ImmersiveStyle.THIN,
-          interactive: true,
-          lightEffect: { color: undefined }
-        }))
-    } else {
-      Row() { this.TopBarInner() }
-        .width('100%').height(SEARCH_BAR_HEIGHT)
-        .borderRadius(SEARCH_BAR_HEIGHT / 2)
-        .padding({ left: 16, right: 16 })
-        .backgroundColor(ThemeColors.bgInput)
-    }
-  }
-
-  @Builder
-  TopBarInner() {
-    Image($r('app.media.ic_search'))
-      .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-    TextInput({ text: this.searchText, placeholder: '搜索服务', controller: this.searchInputController })
-      .fontSize(14)
-      .fontColor(ThemeColors.textPrimary)
-      .placeholderColor('#90A4AE')
-      .backgroundColor(Color.Transparent)
-      .layoutWeight(1)
-      .margin({ left: 8 })
-      .onChange((v: string) => { this.onSearchChange(v); })
-    if (this.searchText.length > 0) {
-      Image($r('app.media.ic_public_close'))
-        .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-        .onClick(() => { this.clearSearch(); })
-    }
+    ImmersionSearch({
+      systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+      _height: SEARCH_BAR_HEIGHT,
+      options: { placeholder: '搜索服务' },
+      modifier: new SearchModifier(
+        ThemeColors.textPrimary,
+        '#90A4AE',
+        (value: string): void => { this.onSearchChange(value); }
+      )
+    })
+    .height(SEARCH_BAR_HEIGHT)
+    .width('100%')
+    .clip(false)
   }
 
   @Builder

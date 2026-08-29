@@ -1,17 +1,12 @@
-// MineTab.ets — 我的页
-// 头像卡 + 三列数据卡（一卡通余额/我的邮箱/图书借阅）+ 外观与主题/设置
-// ImmersionCardSurface 玻璃光感 / 按压 scale 动画 / 深浅色 / 边框
 import { HdsTabs, hdsMaterial } from '@kit.UIDesignKit';
-import { router } from '@kit.ArkUI';
 import { ThemeColors } from '../../utils/ThemeColors';
 import { PreferenceUtil } from '../../utils/PreferenceUtil';
 import { SqgService } from '../../services/SqgService';
 import { MaterialConfig } from '../../utils/MaterialConfig';
-import { WebPageParam } from '../NavParams';
+import { WebPageParam, isJwServiceName } from '../NavParams';
 
 const TAG = 'MineTab';
 
-// ===== 常量 =====
 const HOME_HORIZONTAL_PADDING: number = 20;
 const PAGE_CARD_GAP: number = 10;
 const HOME_TITLE_HEIGHT: number = 56;
@@ -70,7 +65,6 @@ export struct MineTab {
   @State loggedIn: boolean = true;
   @State pressedCardId: string = '';
   @State pageWidth: number = 0;
-  // 三列数据
   @State balance: string = '0.00';
   @State emailCount: string = '0';
   @State bookCount: string = '0';
@@ -112,7 +106,6 @@ export struct MineTab {
     }
   }
 
-  // 从 AppStorage/缓存读取三列数值（无值或空则默认 0）
   private applyCachedStats(): void {
     this.balance = this.formatBalance(AppStorage.get<string>('mine_card_balance') ?? PreferenceUtil.getString('mine_card_balance_cached'));
     this.emailCount = this.formatCount(AppStorage.get<string>('mine_email_count') ?? PreferenceUtil.getString('mine_email_count_cached'));
@@ -134,8 +127,6 @@ export struct MineTab {
     }
     return String(Math.round(num));
   }
-
-  // ===== 校园卡跳转（复用主页 openQuick('校园卡') 逻辑）=====
 
   private async loadServices(): Promise<void> {
     try {
@@ -202,21 +193,19 @@ export struct MineTab {
       target = 'https://i.sqgxy.edu.cn' + target;
     }
     const finalUrl: string = SqgService.getInstance().buildServiceUrl(target, item.tokenAccept);
-    this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(item.name, finalUrl));
+    if (isJwServiceName(item.name)) {
+      this.pageStack.pushPathByName('JwWebPage', new WebPageParam(item.name, finalUrl));
+    } else {
+      this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(item.name, finalUrl));
+    }
   }
 
   private openH5(title: string): void {
     this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(title, 'https://i.sqgxy.edu.cn/h5/'));
   }
 
-  // ===== 颜色/主题支撑 =====
-
   private isDark(): boolean {
     return this.themeIsDark;
-  }
-
-  private pageBackgroundColor(): string {
-    return this.isDark() ? '#000000' : '#F2F3F5';
   }
 
   private primaryTextColor(): string {
@@ -282,21 +271,15 @@ export struct MineTab {
     }
   }
 
-  // ===== 玻璃光感材质层 =====
-
   private immersionExpandedWidth(cardHeight: number): number {
-    return Math.max(this.pageWidth, RESPONSIVE_CARD_MAX_WIDTH) + this.immersionMaterialBarHeight(cardHeight) * 2;
-  }
-
-  private immersionMaterialBarHeight(cardHeight: number): number {
-    return cardHeight;
+    return Math.max(this.pageWidth, RESPONSIVE_CARD_MAX_WIDTH) + cardHeight * 2;
   }
 
   @Builder
   ImmersionMaterialContent(cardHeight: number) {
     Stack()
       .width(this.immersionExpandedWidth(cardHeight))
-      .height(this.immersionMaterialBarHeight(cardHeight))
+      .height(cardHeight)
       .backgroundColor(Color.Transparent)
       .hitTestBehavior(HitTestMode.None)
   }
@@ -314,7 +297,7 @@ export struct MineTab {
       .width(this.immersionExpandedWidth(cardHeight))
       .height(cardHeight)
       .barWidth(this.immersionExpandedWidth(cardHeight))
-      .barHeight(this.immersionMaterialBarHeight(cardHeight))
+      .barHeight(cardHeight)
       .barOverlap(true)
       .barPosition(BarPosition.End)
       .barBackgroundStyle({ maskColor: '#00000000' })
@@ -344,8 +327,6 @@ export struct MineTab {
   ImmersionCardSurface(cardHeight: number, cardRadius: number) {
     this.ImmersionMaterialLayer(cardHeight, cardRadius)
   }
-
-  // ===== 头像卡 =====
 
   @Builder
   MeAvatar() {
@@ -415,7 +396,7 @@ export struct MineTab {
       if (this.loggedIn) {
         this.pageStack.pushPathByName('ProfileCenterPage', undefined);
       } else {
-        router.replaceUrl({ url: 'pages/login/LoginPage' });
+        this.getUIContext().getRouter().replaceUrl({ url: 'pages/login/LoginPage' });
       }
     })
   }
@@ -438,8 +419,6 @@ export struct MineTab {
       this.handleAppCardTouch('me-login', event.type);
     })
   }
-
-  // ===== 三列数据卡（一卡通余额 / 我的邮箱 / 图书借阅）=====
 
   @Builder
   MeStatsItem(item: StatsItem) {
@@ -504,8 +483,6 @@ export struct MineTab {
       this.handleAppCardTouch('me-stats', event.type);
     })
   }
-
-  // ===== 分类操作卡 =====
 
   @Builder
   MeActionCardDivider() {
@@ -581,8 +558,6 @@ export struct MineTab {
       this.handleAppCardTouch('me-action-' + group.toString(), event.type);
     })
   }
-
-  // ===== Action 分发 =====
 
   private handleMeAction(group: number, index: number): void {
     if (group === 0) {

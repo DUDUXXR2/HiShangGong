@@ -1,9 +1,10 @@
 import { calendarManager } from '@kit.CalendarKit';
 import { abilityAccessCtrl, bundleManager } from '@kit.AbilityKit';
-import { uiMaterial } from '@kit.ArkUI';
 import { ThemeColors } from '../../utils/ThemeColors';
 import { ToastUtil } from '../../utils/ToastUtil';
-import { immersiveMaterialSupported } from '../../utils/MaterialKit';
+import { ImmersionSearch } from '@tangs/components';
+import { SearchModifier } from '../../components/SearchModifier';
+import { MaterialConfig } from '../../utils/MaterialConfig';
 
 const HOME_TITLE_HEIGHT: number = 56;
 const HOME_NAV_HEIGHT: number = 52;
@@ -29,7 +30,6 @@ export struct ScheduleTab {
   @State newHour: number = 10;
   @State newMinute: number = 0;
   @State selectedDate: number = ScheduleTab.startOfToday();
-  private textInputController: TextInputController = new TextInputController();
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
@@ -223,52 +223,19 @@ export struct ScheduleTab {
 
   @Builder
   SearchBar() {
-    if (immersiveMaterialSupported()) {
-      Row() { this.SearchBarInner() }
-        .width('100%').height(SEARCH_BAR_HEIGHT)
-        .borderRadius(SEARCH_BAR_HEIGHT / 2)
-        .padding({ left: 16, right: 16 })
-        .systemMaterial(new uiMaterial.ImmersiveMaterial({
-          style: uiMaterial.ImmersiveStyle.THIN,
-          interactive: true,
-          lightEffect: { color: undefined }
-        }))
-    } else {
-      Row() { this.SearchBarInner() }
-        .width('100%').height(SEARCH_BAR_HEIGHT)
-        .borderRadius(SEARCH_BAR_HEIGHT / 2)
-        .padding({ left: 16, right: 16 })
-        .backgroundColor(ThemeColors.bgInput)
-    }
-  }
-
-  @Builder
-  SearchBarInner() {
-    Image($r('app.media.ic_search'))
-      .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-    TextInput({ text: this.newTitle, placeholder: '添加日程', controller: this.textInputController })
-      .fontSize(14)
-      .fontColor(ThemeColors.textPrimary)
-      .placeholderColor('#90A4AE')
-      .backgroundColor(Color.Transparent)
-      .layoutWeight(1)
-      .margin({ left: 8 })
-      .onChange((v: string) => { this.newTitle = v; })
-    Text(this.fmtNewTime())
-      .fontSize(14)
-      .fontColor('#2979FF')
-      .fontWeight(FontWeight.Medium)
-      .margin({ left: 8 })
-      .onClick(() => { this.showTimePicker(); })
-    Text('添加')
-      .fontSize(14)
-      .fontColor('#FFFFFF')
-      .fontWeight(FontWeight.Medium)
-      .backgroundColor('#2979FF')
-      .borderRadius(14)
-      .padding({ left: 14, right: 14, top: 6, bottom: 6 })
-      .margin({ left: 8 })
-      .onClick(() => { this.addEvent(); })
+    ImmersionSearch({
+      systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+      _height: SEARCH_BAR_HEIGHT,
+      options: { placeholder: '添加日程' },
+      modifier: new SearchModifier(
+        ThemeColors.textPrimary,
+        '#90A4AE',
+        (value: string): void => { this.newTitle = value; }
+      )
+    })
+    .height(SEARCH_BAR_HEIGHT)
+    .width('100%')
+    .clip(false)
   }
 
   @Builder

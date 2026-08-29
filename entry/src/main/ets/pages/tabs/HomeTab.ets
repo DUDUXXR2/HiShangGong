@@ -1,19 +1,20 @@
 // HomeTab.ets — 首页
 // 布局：搜索框固定不动（标题栏下方），下方滚动区域放两个快捷操作卡片（QuickActionGrid）
 // 卡片为设置页风格玻璃卡片（表面不可点、可滑动），图标优先匹配服务页真实图标，其余匹配本地 svg
-import { uiMaterial } from '@kit.ArkUI';
 import { scanCore, scanBarcode } from '@kit.ScanKit';
 import { common } from '@kit.AbilityKit';
 import { ThemeColors } from '../../utils/ThemeColors';
 import { SqgService } from '../../services/SqgService';
-import { WebPageParam } from '../NavParams';
+import { WebPageParam, isJwServiceName } from '../NavParams';
 import { ToastUtil } from '../../utils/ToastUtil';
-import { immersiveMaterialSupported } from '../../utils/MaterialKit';
 import { QuickActionGrid, QuickActionItem } from '../../components/QuickActionGrid';
 import { localIconRes, isColoredIcon } from '../../utils/ServiceIcons';
 import { CloudIconStore } from '../../utils/CloudIcons';
 import { CloudColumnService } from '../../services/SqgService';
 import { GlassCard } from '../../components/GlassCard';
+import { ImmersionSearch } from '@tangs/components';
+import { SearchModifier } from '../../components/SearchModifier';
+import { MaterialConfig } from '../../utils/MaterialConfig';
 
 const TAG = 'HomeTab';
 
@@ -36,7 +37,6 @@ export struct HomeTab {
   @State services: ServiceItem[] = [];
   @State searchText: string = '';
   @State searchResults: ServiceItem[] = [];
-  private searchInputController: TextInputController = new TextInputController();
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
@@ -151,7 +151,11 @@ export struct HomeTab {
       target = 'https://i.sqgxy.edu.cn' + target;
     }
     const finalUrl: string = SqgService.getInstance().buildServiceUrl(target, item.tokenAccept);
-    this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(item.name, finalUrl));
+    if (isJwServiceName(item.name)) {
+      this.pageStack.pushPathByName('JwWebPage', new WebPageParam(item.name, finalUrl));
+    } else {
+      this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(item.name, finalUrl));
+    }
   }
 
   private openH5(title: string): void {
@@ -204,7 +208,11 @@ export struct HomeTab {
     }
     const finalUrl: string = SqgService.getInstance().buildServiceUrl(target, item.tokenAccept);
     const title: string = item.serviceName.length > 0 ? item.serviceName : item.mainTitle;
-    this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(title, finalUrl));
+    if (isJwServiceName(title)) {
+      this.pageStack.pushPathByName('JwWebPage', new WebPageParam(title, finalUrl));
+    } else {
+      this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(title, finalUrl));
+    }
   }
 
   // 原生扫一扫（Scan Kit 默认扫码 UI，无需摄像头权限）
@@ -281,47 +289,28 @@ export struct HomeTab {
       target = 'https://i.sqgxy.edu.cn' + target;
     }
     const finalUrl: string = SqgService.getInstance().buildServiceUrl(target, item.tokenAccept);
-    this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(item.name, finalUrl));
+    if (isJwServiceName(item.name)) {
+      this.pageStack.pushPathByName('JwWebPage', new WebPageParam(item.name, finalUrl));
+    } else {
+      this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(item.name, finalUrl));
+    }
   }
 
   @Builder
   SearchBar() {
-    if (immersiveMaterialSupported()) {
-      Row() { this.SearchBarInner() }
-        .width('100%').height(SEARCH_BAR_HEIGHT)
-        .borderRadius(SEARCH_BAR_HEIGHT / 2)
-        .padding({ left: 16, right: 16 })
-        .systemMaterial(new uiMaterial.ImmersiveMaterial({
-          style: uiMaterial.ImmersiveStyle.THIN,
-          interactive: true,
-          lightEffect: { color: undefined }
-        }))
-    } else {
-      Row() { this.SearchBarInner() }
-        .width('100%').height(SEARCH_BAR_HEIGHT)
-        .borderRadius(SEARCH_BAR_HEIGHT / 2)
-        .padding({ left: 16, right: 16 })
-        .backgroundColor(ThemeColors.bgInput)
-    }
-  }
-
-  @Builder
-  SearchBarInner() {
-    Image($r('app.media.ic_search'))
-      .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-    TextInput({ text: this.searchText, placeholder: '搜索服务', controller: this.searchInputController })
-      .fontSize(14)
-      .fontColor(ThemeColors.textPrimary)
-      .placeholderColor('#90A4AE')
-      .backgroundColor(Color.Transparent)
-      .layoutWeight(1)
-      .margin({ left: 8 })
-      .onChange((v: string) => { this.onSearchChange(v); })
-    if (this.searchText.length > 0) {
-      Image($r('app.media.ic_public_close'))
-        .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-        .onClick(() => { this.clearSearch(); })
-    }
+    ImmersionSearch({
+      systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+      _height: SEARCH_BAR_HEIGHT,
+      options: { placeholder: '搜索服务' },
+      modifier: new SearchModifier(
+        ThemeColors.textPrimary,
+        '#90A4AE',
+        (value: string): void => { this.onSearchChange(value); }
+      )
+    })
+    .height(SEARCH_BAR_HEIGHT)
+    .width('100%')
+    .clip(false)
   }
 
   @Builder

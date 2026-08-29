@@ -583,8 +583,8 @@ export class SqgService {
     return url;
   }
 
-  // 退出登录/切换账号时清除全部业务缓存（防止旧账号数据残留到新账号）
-  // 清空：业务缓存键、AppStorage 我的页数据、Cookie、课表落盘文件
+  // 退出登录/切换账号时清除业务缓存（保留 WebView Cookie，避免 H5 页面需要重新登录）
+  // 新登录后 buildServiceUrl 会通过 CAS 流程自动写入新会话 Cookie，覆盖旧账号的
   async clearUserData(): Promise<void> {
     // 业务缓存键
     const cacheKeys: string[] = [
@@ -611,16 +611,6 @@ export class SqgService {
       AppStorage.setOrCreate('mine_card_balance', '--');
       AppStorage.setOrCreate('mine_book_count', '--');
       AppStorage.setOrCreate('mine_email_count', '--');
-    } catch (e) {
-    }
-    // 清空 HTTP Cookie
-    try {
-      await HttpUtil.getInstance().clearCookies();
-    } catch (e) {
-    }
-    // 清空 WebView cookie 会话（切账号/退出后残留的 H5 会话是上个账号的，必须一并清掉）
-    try {
-      await web_webview.WebCookieManager.clearAllCookies();
     } catch (e) {
     }
     // 课表落盘文件

@@ -25,6 +25,7 @@ import { SettingsPage } from './SettingsPage';
 import { AccountSecurityPage } from './AccountSecurityPage';
 import { ServiceWebPage } from './ServiceWebPage';
 import { ClassTablePage } from './ClassTablePage';
+import { JwWebPage } from './JwWebPage';
 import { ProfileCenterPage } from './ProfileCenterPage';
 import { AppearancePage } from './AppearancePage';
 import { DeclarationPage } from './DeclarationPage';
@@ -113,7 +114,7 @@ struct MainPage {
 
   aboutToAppear(): void {
     if (!SqgService.getInstance().isLoggedIn()) {
-      router.replaceUrl({ url: 'pages/login/LoginPage' });
+      this.getUIContext().getRouter().replaceUrl({ url: 'pages/login/LoginPage' });
       return;
     }
     SqgService.getInstance().refreshMineData().catch(() => {
@@ -122,7 +123,7 @@ struct MainPage {
 
   private async logout(): Promise<void> {
     await SqgService.getInstance().logout();
-    router.replaceUrl({ url: 'pages/login/LoginPage' });
+    this.getUIContext().getRouter().replaceUrl({ url: 'pages/login/LoginPage' });
   }
 
   // Navigation 二级页路由映射
@@ -136,6 +137,8 @@ struct MainPage {
       ServiceWebPage()
     } else if (name === 'ClassTablePage') {
       ClassTablePage()
+    } else if (name === 'JwWebPage') {
+      JwWebPage()
     } else if (name === 'ProfileCenterPage') {
       ProfileCenterPage()
     } else if (name === 'AppearancePage') {

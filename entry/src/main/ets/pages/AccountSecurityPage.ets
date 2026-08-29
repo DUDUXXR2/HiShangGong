@@ -30,7 +30,7 @@ export struct AccountSecurityPage {
     } catch (e) {
     }
     try {
-      router.replaceUrl({ url: 'pages/login/LoginPage' });
+      this.getUIContext().getRouter().replaceUrl({ url: 'pages/login/LoginPage' });
     } catch (e) {
     }
   }

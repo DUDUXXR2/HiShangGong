@@ -50,7 +50,7 @@ struct ImageCropPage {
   @StorageProp('navIndicatorHeight') navIndicatorHeight: number = 0;
 
   aboutToAppear(): void {
-    const params = router.getParams() as Record<string, string>;
+    const params = this.getUIContext().getRouter().getParams() as Record<string, string>;
     if (params && params.path) {
       this.srcPath = params.path;
       this.loadImage();
@@ -118,7 +118,7 @@ struct ImageCropPage {
   }
 
   async confirmCrop(): Promise<void> {
-    if (!this.pixelMap) { router.back(); return; }
+    if (!this.pixelMap) { this.getUIContext().getRouter().back(); return; }
     try {
       const dispW: number = this.baseW * this.imgScale;
       const dispH: number = this.baseH * this.imgScale;
@@ -138,21 +138,20 @@ struct ImageCropPage {
 
       await this.pixelMap.crop({ x: safeX, y: safeY, size: { width: safeW, height: safeH } });
 
-      const packer = image.createImagePacker();
-      const buffer = await packer.packing(this.pixelMap, { format: 'image/jpeg', quality: 90 });
-      packer.release();
-      const destPath = getContext(this).filesDir + '/class_bg_image.jpg';
+      const destPath = this.getUIContext().getHostContext()!.filesDir + '/class_bg_image.jpg';
       const fd = fileIo.openSync(destPath, fileIo.OpenMode.CREATE | fileIo.OpenMode.TRUNC | fileIo.OpenMode.WRITE_ONLY);
-      fileIo.writeSync(fd.fd, buffer);
+      const packer = image.createImagePacker();
+      await packer.packToFile(this.pixelMap, fd.fd, { format: 'image/jpeg', quality: 90 });
+      packer.release();
       fileIo.closeSync(fd);
 
       this.pixelMap.release();
       this.pixelMap = undefined;
 
       AppStorage.setOrCreate('cropped_bg_path', destPath);
-      router.back();
+      this.getUIContext().getRouter().back();
     } catch (e) {
-      router.back();
+      this.getUIContext().getRouter().back();
     }
   }
 
@@ -161,7 +160,7 @@ struct ImageCropPage {
       this.pixelMap.release();
       this.pixelMap = undefined;
     }
-    router.back();
+    this.getUIContext().getRouter().back();
   }
 
   build() {

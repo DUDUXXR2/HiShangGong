@@ -1,4 +1,3 @@
-// GlassPanel.ets — 空白沉浸光感容器（全新组件，无任何内容）
 import { HdsTabs, hdsMaterial } from '@kit.UIDesignKit';
 import { ThemeColors } from '../utils/ThemeColors';
 import { MaterialConfig } from '../utils/MaterialConfig';

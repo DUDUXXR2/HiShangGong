@@ -1,12 +1,13 @@
 // MessageTab.ets — 消息页（站内信）
 // 数据源：GET {message-service}/api/v1/instantMessage/appGroupByTag
 // 返回 list 按 tags.tags 标签分组（固定 待办/其他 分组），每条消息含 appName(标题)/content(内容)/editTime(时间)/num(未读数)
-import { uiMaterial } from '@kit.ArkUI';
 import { ThemeColors } from '../../utils/ThemeColors';
 import { SqgService } from '../../services/SqgService';
-import { WebPageParam } from '../NavParams';
-import { immersiveMaterialSupported } from '../../utils/MaterialKit';
+import { WebPageParam, isJwServiceName } from '../NavParams';
 import { GlassCard } from '../../components/GlassCard';
+import { ImmersionSearch } from '@tangs/components';
+import { SearchModifier } from '../../components/SearchModifier';
+import { MaterialConfig } from '../../utils/MaterialConfig';
 
 const HOME_TITLE_HEIGHT: number = 56;
 const HOME_NAV_HEIGHT: number = 52;
@@ -40,7 +41,6 @@ export struct MessageTab {
   @State loading: boolean = true;
   @State searchText: string = '';
   @State searchResults: AppMessage[] = [];
-  private searchInputController: TextInputController = new TextInputController();
   @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageProp('bottomRectHeight') bottomRectHeight: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
@@ -204,42 +204,19 @@ export struct MessageTab {
 
   @Builder
   SearchBar() {
-    if (immersiveMaterialSupported()) {
-      Row() { this.SearchBarInner() }
-        .width('100%').height(SEARCH_BAR_HEIGHT)
-        .borderRadius(SEARCH_BAR_HEIGHT / 2)
-        .padding({ left: 16, right: 16 })
-        .systemMaterial(new uiMaterial.ImmersiveMaterial({
-          style: uiMaterial.ImmersiveStyle.THIN,
-          interactive: true,
-          lightEffect: { color: undefined }
-        }))
-    } else {
-      Row() { this.SearchBarInner() }
-        .width('100%').height(SEARCH_BAR_HEIGHT)
-        .borderRadius(SEARCH_BAR_HEIGHT / 2)
-        .padding({ left: 16, right: 16 })
-        .backgroundColor(ThemeColors.bgInput)
-    }
-  }
-
-  @Builder
-  SearchBarInner() {
-    Image($r('app.media.ic_search'))
-      .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-    TextInput({ text: this.searchText, placeholder: '搜索消息', controller: this.searchInputController })
-      .fontSize(14)
-      .fontColor(ThemeColors.textPrimary)
-      .placeholderColor('#90A4AE')
-      .backgroundColor(Color.Transparent)
-      .layoutWeight(1)
-      .margin({ left: 8 })
-      .onChange((v: string) => { this.onSearchChange(v); })
-    if (this.searchText.length > 0) {
-      Image($r('app.media.ic_public_close'))
-        .width(16).height(16).fillColor('#90A4AE').objectFit(ImageFit.Contain)
-        .onClick(() => { this.clearSearch(); })
-    }
+    ImmersionSearch({
+      systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+      _height: SEARCH_BAR_HEIGHT,
+      options: { placeholder: '搜索消息' },
+      modifier: new SearchModifier(
+        ThemeColors.textPrimary,
+        '#90A4AE',
+        (value: string): void => { this.onSearchChange(value); }
+      )
+    })
+    .height(SEARCH_BAR_HEIGHT)
+    .width('100%')
+    .clip(false)
   }
 
   @Builder
@@ -325,7 +302,11 @@ export struct MessageTab {
         target = 'https://i.sqgxy.edu.cn' + target;
       }
       const title: string = item.appName.length > 0 ? item.appName : '消息详情';
-      this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(title, target));
+      if (isJwServiceName(title)) {
+        this.pageStack.pushPathByName('JwWebPage', new WebPageParam(title, target));
+      } else {
+        this.pageStack.pushPathByName('ServiceWebPage', new WebPageParam(title, target));
+      }
       return;
     }
     // 无跳转链接：显示完整内容

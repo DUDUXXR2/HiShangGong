@@ -1,4 +1,5 @@
 import { HdsNavigation, HdsNavigationTitleMode, ScrollEffectType, BlurStrategy } from '@kit.UIDesignKit';
+import { uiMaterial } from '@kit.ArkUI';
 import { ThemeColors } from '../utils/ThemeColors';
 import { MaterialConfig } from '../utils/MaterialConfig';
 import { BackgroundManager, BackgroundLayer } from '../utils/BackgroundManager';
@@ -126,6 +127,7 @@ export struct AppearancePage {
         .selectedOptionFont({ size: 15, weight: FontWeight.Regular })
         .selectedOptionFontColor(this.accentContrastColor())
         .selectedOptionBgColor(this.accentColor())
+        .menuSystemMaterial(new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.THICK }))
         .margin({ right: 16 })
         .onSelect((index: number) => {
           if (index >= 0 && index < options.length) {
@@ -188,6 +190,7 @@ export struct AppearancePage {
         .selectedOptionFont({ size: 15, weight: FontWeight.Regular })
         .selectedOptionFontColor(this.accentContrastColor())
         .selectedOptionBgColor(this.accentColor())
+        .menuSystemMaterial(new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.THICK }))
         .margin({ right: 16 })
         .onSelect((index: number) => {
           if (index >= 0 && index < FONT_SIZE_OPTIONS.length) {
@@ -222,6 +225,7 @@ export struct AppearancePage {
         .selectedOptionFont({ size: 15, weight: FontWeight.Regular })
         .selectedOptionFontColor(this.accentContrastColor())
         .selectedOptionBgColor(this.accentColor())
+        .menuSystemMaterial(new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.THICK }))
         .margin({ right: 16 })
         .onSelect((index: number) => {
           if (index >= 0 && index < DARK_MODE_OPTIONS.length) {
