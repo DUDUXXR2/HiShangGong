@@ -8,13 +8,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:\\Users\\26567\\.ohos\\config\\default_HISG_GOOxzg9SaMbBOc-FF-xx5ks8InaNdWtEtHgQ865ZIX4=.cer",
-          "keyAlias": "debugKey",
-          "keyPassword": "0000001B1BD682CEE520966E54B646BF87F676D7BC3DBD85B1C3A05B0CA61883BF235FA8B045D99C6E7D49",
-          "profile": "C:\\Users\\26567\\.ohos\\config\\default_HISG_GOOxzg9SaMbBOc-FF-xx5ks8InaNdWtEtHgQ865ZIX4=.p7b",
+          "storeFile": "E:/p12/yssg_release.p12",
+          "storePassword": "00000018AA437F020B80A53105BC31173A02B7731DB829DDC8ED20266F399936F897ABF27F211B41",
+          "keyAlias": "YSSG",
+          "keyPassword": "0000001813D24E7A1E7105A9732A93B08230CF6B7C88D9CDDF4FAF041275E70B2CBD35140D033438",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\26567\\.ohos\\config\\default_HISG_GOOxzg9SaMbBOc-FF-xx5ks8InaNdWtEtHgQ865ZIX4=.p12",
-          "storePassword": "0000001BAFA0E2296E3BDD65204D6AFEE8036534FBD50E6BC9ABAEA17B21F7F338E47F68A5225222438143"
+          "profile": "E:/p12/yssg_release_profileRelease.p7b",
+          "certpath": "E:/p12/yssg_release.cer"
         }
       }
     ],

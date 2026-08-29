@@ -2,8 +2,8 @@
   "app": {
     "bundleName": "com.yssg.sqgxy",
     "vendor": "Hi商工",
-    "versionCode": 1000000,
-    "versionName": "1.0.0",
+    "versionCode": 1010000,
+    "versionName": "1.1.0",
     "minAPIVersion": 23,
     "targetAPIVersion": 23,
     "apiReleaseType": "Release1",
