@@ -7,7 +7,12 @@ import { WebPageParam } from './NavParams';
 import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { SymbolGlyphModifier } from '@kit.ArkUI';
+import { ImmersionButton } from '@tangs/components';
+import { ActionButtonModifier } from '../components/ImmersionActionButton';
+import { MaterialConfig } from '../utils/MaterialConfig';
+
+const FLOATING_BTN_SIZE: number = 36;
+const FLOATING_BTN_MARGIN: number = 16;
 
 class WebHeader {
   headerKey: string = '';
@@ -32,6 +37,7 @@ export struct ServiceWebPage {
   @State isLoading: boolean = true;
   @State loadError: string = '';
   @State currentUrl: string = '';
+  @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   @StorageLink('theme_is_dark') themeIsDark: boolean = false;
   private webController: web_webview.WebviewController = new web_webview.WebviewController();
   private bridge: WebBridge = new WebBridge();
@@ -153,99 +159,145 @@ export struct ServiceWebPage {
 
   build() {
     NavDestination() {
-      Web({ src: '', controller: this.webController })
-        .width('100%')
-        .height('100%')
-        .javaScriptAccess(true)
-        .domStorageAccess(true)
-        .onLoadIntercept((event) => {
-          let url: string = '';
-          try {
-            url = event.data.getRequestUrl();
-          } catch (e) {
-          }
-          return this.interceptExternalScheme(url);
-        })
-        .javaScriptProxy({
-          object: this.bridge,
-          methodList: ['updateStatusBar'],
-          name: 'etsBridge',
-          controller: this.webController
-        })
-        .onPageBegin(() => {
-          this.isLoading = true;
-          try {
-            const domain: string = this.hostOf(this.currentUrl.length > 0 ? this.currentUrl : this.url);
-            if (domain.length > 0) {
-              const cookies: string = HttpUtil.getInstance().getCookiesForDomain(domain);
-              if (cookies.length > 0) {
-                web_webview.WebCookieManager.configCookieSync('https://' + domain, cookies + '; Path=/', false, true);
-              }
-              const token: string = PreferenceUtil.getString('id_token');
-              const isTrusted: boolean = this.isInCasArry(this.currentUrl.length > 0 ? this.currentUrl : this.url);
-              if (isTrusted && token.length > 0) {
-                web_webview.WebCookieManager.configCookieSync('https://' + domain, 'X-Id-Token=' + token + '; Path=/', false, true);
-              }
-              web_webview.WebCookieManager.saveCookieAsync();
+      Stack({ alignContent: Alignment.TopStart }) {
+        Web({ src: '', controller: this.webController })
+          .width('100%')
+          .height('100%')
+          .javaScriptAccess(true)
+          .domStorageAccess(true)
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+          .onLoadIntercept((event) => {
+            let url: string = '';
+            try {
+              url = event.data.getRequestUrl();
+            } catch (e) {
             }
-          } catch (e) {
-          }
-        })
-        .onPageEnd(() => {
-          this.isLoading = false;
-          try {
-            this.currentUrl = this.webController.getUrl();
-          } catch (e) {
-          }
-        })
-        .onTitleReceive((event) => {
-          if (event.title.length > 0) {
-            this.title = event.title;
-          }
-        })
-        .onErrorReceive(() => {
-          this.isLoading = false;
-          this.loadError = '页面加载失败';
-        })
+            return this.interceptExternalScheme(url);
+          })
+          .javaScriptProxy({
+            object: this.bridge,
+            methodList: ['updateStatusBar'],
+            name: 'etsBridge',
+            controller: this.webController
+          })
+          .onPageBegin(() => {
+            this.isLoading = true;
+            try {
+              const domain: string = this.hostOf(this.currentUrl.length > 0 ? this.currentUrl : this.url);
+              if (domain.length > 0) {
+                const cookies: string = HttpUtil.getInstance().getCookiesForDomain(domain);
+                if (cookies.length > 0) {
+                  web_webview.WebCookieManager.configCookieSync('https://' + domain, cookies + '; Path=/', false, true);
+                }
+                const token: string = PreferenceUtil.getString('id_token');
+                const isTrusted: boolean = this.isInCasArry(this.currentUrl.length > 0 ? this.currentUrl : this.url);
+                if (isTrusted && token.length > 0) {
+                  web_webview.WebCookieManager.configCookieSync('https://' + domain, 'X-Id-Token=' + token + '; Path=/', false, true);
+                }
+                web_webview.WebCookieManager.saveCookieAsync();
+              }
+            } catch (e) {
+            }
+          })
+          .onPageEnd(() => {
+            this.isLoading = false;
+            try {
+              this.currentUrl = this.webController.getUrl();
+            } catch (e) {
+            }
+          })
+          .onTitleReceive((event) => {
+            if (event.title.length > 0) {
+              this.title = event.title;
+            }
+          })
+          .onErrorReceive(() => {
+            this.isLoading = false;
+            this.loadError = '页面加载失败';
+          })
 
-      if (this.isLoading) {
         Column() {
-          LoadingProgress().width(36).height(36).color('#2979FF')
+          Row() {
+            Stack() {
+              ImmersionButton({
+                systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+                buttonModify: new ActionButtonModifier(FLOATING_BTN_SIZE, FLOATING_BTN_SIZE, Color.Transparent, this.themeIsDark ? '#80FFFFFF' : '#80000000'),
+                click: (): void => { this.goBack(); }
+              }) {
+                SymbolGlyph($r('sys.symbol.chevron_backward'))
+                  .fontSize(18)
+                  .fontColor([this.themeIsDark ? '#FFFFFF' : '#000000'])
+                  .fontWeight(FontWeight.Medium)
+                  .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+              }
+            }
+            .width(FLOATING_BTN_SIZE)
+            .height(FLOATING_BTN_SIZE)
+
+            Row().hitTestBehavior(HitTestMode.Transparent).layoutWeight(1).height(1)
+
+            Stack() {
+              ImmersionButton({
+                systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+                buttonModify: new ActionButtonModifier(FLOATING_BTN_SIZE, FLOATING_BTN_SIZE, Color.Transparent, this.themeIsDark ? '#80FFFFFF' : '#80000000'),
+                click: (): void => { this.sharePage(); }
+              }) {
+                SymbolGlyph($r('sys.symbol.share'))
+                  .fontSize(16)
+                  .fontColor([this.themeIsDark ? '#FFFFFF' : '#000000'])
+                  .fontWeight(FontWeight.Medium)
+                  .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+              }
+            }
+            .width(FLOATING_BTN_SIZE)
+            .height(FLOATING_BTN_SIZE)
+          }
+          .width('100%')
+          .padding({
+            left: FLOATING_BTN_MARGIN,
+            right: FLOATING_BTN_MARGIN,
+            top: this.statusBarHeight + 8
+          })
+          .height(FLOATING_BTN_SIZE)
         }
         .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.Center)
-        .backgroundColor(this.themeIsDark ? '#CC000000' : '#CCFFFFFF')
-        .zIndex(5)
-      }
+        .height(this.statusBarHeight + FLOATING_BTN_SIZE + 16)
+        .backgroundColor(this.themeIsDark ? '#000000' : '#FFFFFF')
+        .zIndex(10)
 
-      if (this.loadError.length > 0) {
-        Column() {
-          Text(this.loadError).fontSize(13).fontColor('#C62828').padding(12)
-          Text('重试')
-            .fontSize(13)
-            .fontWeight(FontWeight.Medium)
-            .fontColor('#2979FF')
-            .padding({ left: 20, right: 20, top: 8, bottom: 8 })
-            .borderRadius(16)
-            .backgroundColor('#FFFFFF')
-            .onClick(() => { this.loadWithAuth(); })
+        if (this.isLoading) {
+          Column() {
+            LoadingProgress().width(36).height(36).color('#2979FF')
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor(this.themeIsDark ? '#CC000000' : '#CCFFFFFF')
+          .zIndex(5)
         }
-        .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.Center)
-        .zIndex(6)
+
+        if (this.loadError.length > 0) {
+          Column() {
+            Text(this.loadError).fontSize(13).fontColor('#C62828').padding(12)
+            Text('重试')
+              .fontSize(13)
+              .fontWeight(FontWeight.Medium)
+              .fontColor('#2979FF')
+              .padding({ left: 20, right: 20, top: 8, bottom: 8 })
+              .borderRadius(16)
+              .backgroundColor('#FFFFFF')
+              .onClick(() => { this.loadWithAuth(); })
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
+          .zIndex(6)
+        }
       }
+      .width('100%').height('100%')
     }
-    .title(this.title)
+    .hideTitleBar(true)
     .backgroundColor(this.themeIsDark ? '#000000' : '#FFFFFF')
-    .menus([
-      {
-        value: '分享',
-        symbolIcon: new SymbolGlyphModifier($r('sys.symbol.share')),
-        action: () => { this.sharePage(); }
-      }
-    ])
     .onBackPressed(() => {
       this.goBack();
       return true;
