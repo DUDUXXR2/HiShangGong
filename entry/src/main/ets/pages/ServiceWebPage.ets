@@ -198,6 +198,7 @@ export struct ServiceWebPage {
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
             .textAlign(TextAlign.Center)
+            .margin({ right: 48 })
 
           Stack() {
             ImmersionButton({
