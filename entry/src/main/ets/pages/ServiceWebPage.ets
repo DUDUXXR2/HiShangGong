@@ -8,10 +8,13 @@ import StatusBarUtil from '../utils/StatusBarUtil';
 import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { SymbolGlyphModifier } from '@kit.ArkUI';
+import { ImmersionButton } from '@tangs/components';
+import { ActionButtonModifier } from '../components/ImmersionActionButton';
+import { MaterialConfig } from '../utils/MaterialConfig';
 
 const TITLE_BAR_HEIGHT: number = 44;
 const SIDE_MARGIN: number = 16;
+const BTN_SIZE: number = 32;
 
 class WebHeader {
   headerKey: string = '';
@@ -31,7 +34,7 @@ export class WebBridge {
 @Component
 export struct ServiceWebPage {
   @Consume('pageStack') pageStack: NavPathStack;
-  @State title: string = '服务';
+  @State title: string = '';
   @State url: string = '';
   @State isLoading: boolean = true;
   @State loadError: string = '';
@@ -41,12 +44,12 @@ export struct ServiceWebPage {
   private bridge: WebBridge = new WebBridge();
 
   aboutToAppear(): void {
-    StatusBarUtil.setStatusBarColor('#FFFFFF', '#000000');
+    StatusBarUtil.setStatusBarColor('#00000000', '#000000');
     try {
       const list = this.pageStack.getParamByName('ServiceWebPage') as WebPageParam[];
       if (list !== undefined && list !== null && list.length > 0) {
         const p: WebPageParam = list[0];
-        this.title = p.title.length > 0 ? p.title : '服务';
+        this.title = p.title.length > 0 ? p.title : '';
         this.url = p.url;
         this.currentUrl = p.url;
       }
@@ -163,40 +166,59 @@ export struct ServiceWebPage {
   build() {
     NavDestination() {
       Column() {
-        Stack({ alignContent: Alignment.Center }) {
-          Row() {
-            Image($r('sys.media.ohos_ic_public_arrow_left'))
-              .width(20).height(20)
-              .fillColor('#000000')
-              .onClick(() => { this.goBack(); })
-
-            Row().width(8)
-
-            Text(this.title)
-              .fontSize(15)
-              .fontWeight(FontWeight.Normal)
-              .fontColor('#000000')
-              .maxLines(1)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
-              .layoutWeight(1)
-              .textAlign(TextAlign.Center)
-
-            Row().width(8)
-
-            SymbolGlyph($r('sys.symbol.share'))
-              .fontSize(18)
-              .fontColor(['#000000'])
-              .fontWeight(FontWeight.Normal)
-              .renderingStrategy(SymbolRenderingStrategy.SINGLE)
-              .onClick(() => { this.sharePage(); })
+        Row() {
+          Stack() {
+            ImmersionButton({
+              systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+              buttonModify: new ActionButtonModifier(BTN_SIZE, BTN_SIZE, Color.Transparent, '#80000000'),
+              click: (): void => { this.goBack(); }
+            }) {
+              SymbolGlyph($r('sys.symbol.chevron_backward'))
+                .fontSize(16)
+                .fontColor(['#000000'])
+                .fontWeight(FontWeight.Medium)
+                .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+            }
           }
-          .width('100%')
-          .height(TITLE_BAR_HEIGHT)
-          .padding({ left: SIDE_MARGIN, right: SIDE_MARGIN })
-          .alignItems(VerticalAlign.Center)
+          .width(BTN_SIZE)
+          .height(BTN_SIZE)
+
+          Text('返回')
+            .fontSize(13)
+            .fontColor('#000000')
+            .fontWeight(FontWeight.Normal)
+            .margin({ left: 4 })
+            .onClick(() => { this.goBack(); })
+
+          Text(this.title)
+            .fontSize(15)
+            .fontWeight(FontWeight.Normal)
+            .fontColor('#000000')
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
+            .textAlign(TextAlign.Center)
+
+          Stack() {
+            ImmersionButton({
+              systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
+              buttonModify: new ActionButtonModifier(BTN_SIZE, BTN_SIZE, Color.Transparent, '#80000000'),
+              click: (): void => { this.sharePage(); }
+            }) {
+              SymbolGlyph($r('sys.symbol.share'))
+                .fontSize(14)
+                .fontColor(['#000000'])
+                .fontWeight(FontWeight.Medium)
+                .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+            }
+          }
+          .width(BTN_SIZE)
+          .height(BTN_SIZE)
         }
         .width('100%')
         .height(TITLE_BAR_HEIGHT)
+        .padding({ left: SIDE_MARGIN, right: SIDE_MARGIN })
+        .alignItems(VerticalAlign.Center)
 
         Stack() {
           Web({ src: '', controller: this.webController })
