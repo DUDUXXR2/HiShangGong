@@ -67,11 +67,6 @@ export struct ServiceWebPage {
     if (target.length === 0) {
       return;
     }
-    try {
-      const iosUA: string = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
-      this.webController.setCustomUserAgent(iosUA);
-    } catch (e) {
-    }
     const token: string = PreferenceUtil.getString('id_token');
     const isTrustedDomain: boolean = this.isInCasArry(target);
     const headers: WebHeader[] = [];
