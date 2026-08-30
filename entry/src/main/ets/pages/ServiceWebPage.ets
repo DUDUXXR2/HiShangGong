@@ -4,10 +4,14 @@ import { PreferenceUtil } from '../utils/PreferenceUtil';
 import { HttpUtil } from '../utils/HttpUtil';
 import { CAS_ARRY } from '../services/SqgConstants';
 import { WebPageParam } from './NavParams';
+import StatusBarUtil from '../utils/StatusBarUtil';
 import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { SymbolGlyphModifier } from '@kit.ArkUI';
+
+const TITLE_BAR_HEIGHT: number = 44;
+const SIDE_MARGIN: number = 16;
 
 class WebHeader {
   headerKey: string = '';
@@ -32,10 +36,12 @@ export struct ServiceWebPage {
   @State isLoading: boolean = true;
   @State loadError: string = '';
   @State currentUrl: string = '';
+  @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   private webController: web_webview.WebviewController = new web_webview.WebviewController();
   private bridge: WebBridge = new WebBridge();
 
   aboutToAppear(): void {
+    StatusBarUtil.setStatusBarColor('#FFFFFF', '#000000');
     try {
       const list = this.pageStack.getParamByName('ServiceWebPage') as WebPageParam[];
       if (list !== undefined && list !== null && list.length > 0) {
@@ -47,6 +53,10 @@ export struct ServiceWebPage {
     } catch (e) {
     }
     setTimeout(() => { this.loadWithAuth(); }, 50);
+  }
+
+  aboutToDisappear(): void {
+    StatusBarUtil.resetStatusBar();
   }
 
   private loadWithAuth(): void {
@@ -150,120 +160,136 @@ export struct ServiceWebPage {
     }
   }
 
-  @Builder
-  CustomTitleBuilder() {
-    Row() {
-      Text(this.title)
-        .fontSize(15)
-        .fontWeight(FontWeight.Normal)
-        .fontColor('#000000')
-        .maxLines(1)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .textAlign(TextAlign.Center)
-    }
-    .width('100%')
-    .justifyContent(FlexAlign.Center)
-  }
-
   build() {
     NavDestination() {
-      Stack() {
-        Web({ src: '', controller: this.webController })
+      Column() {
+        Stack({ alignContent: Alignment.Center }) {
+          Row() {
+            Image($r('sys.media.ohos_ic_public_arrow_left'))
+              .width(20).height(20)
+              .fillColor('#000000')
+              .onClick(() => { this.goBack(); })
+
+            Row().width(8)
+
+            Text(this.title)
+              .fontSize(15)
+              .fontWeight(FontWeight.Normal)
+              .fontColor('#000000')
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .layoutWeight(1)
+              .textAlign(TextAlign.Center)
+
+            Row().width(8)
+
+            SymbolGlyph($r('sys.symbol.share'))
+              .fontSize(18)
+              .fontColor(['#000000'])
+              .fontWeight(FontWeight.Normal)
+              .renderingStrategy(SymbolRenderingStrategy.SINGLE)
+              .onClick(() => { this.sharePage(); })
+          }
           .width('100%')
-          .height('100%')
-          .javaScriptAccess(true)
-          .domStorageAccess(true)
-          .backgroundColor('#FFFFFF')
-          .onLoadIntercept((event) => {
-            let url: string = '';
-            try {
-              url = event.data.getRequestUrl();
-            } catch (e) {
-            }
-            return this.interceptExternalScheme(url);
-          })
-          .javaScriptProxy({
-            object: this.bridge,
-            methodList: ['updateStatusBar'],
-            name: 'etsBridge',
-            controller: this.webController
-          })
-          .onPageBegin(() => {
-            this.isLoading = true;
-            try {
-              const domain: string = this.hostOf(this.currentUrl.length > 0 ? this.currentUrl : this.url);
-              if (domain.length > 0) {
-                const cookies: string = HttpUtil.getInstance().getCookiesForDomain(domain);
-                if (cookies.length > 0) {
-                  web_webview.WebCookieManager.configCookieSync('https://' + domain, cookies + '; Path=/', false, true);
-                }
-                const token: string = PreferenceUtil.getString('id_token');
-                const isTrusted: boolean = this.isInCasArry(this.currentUrl.length > 0 ? this.currentUrl : this.url);
-                if (isTrusted && token.length > 0) {
-                  web_webview.WebCookieManager.configCookieSync('https://' + domain, 'X-Id-Token=' + token + '; Path=/', false, true);
-                }
-                web_webview.WebCookieManager.saveCookieAsync();
+          .height(TITLE_BAR_HEIGHT)
+          .padding({ left: SIDE_MARGIN, right: SIDE_MARGIN })
+          .alignItems(VerticalAlign.Center)
+        }
+        .width('100%')
+        .height(TITLE_BAR_HEIGHT)
+
+        Stack() {
+          Web({ src: '', controller: this.webController })
+            .width('100%')
+            .height('100%')
+            .javaScriptAccess(true)
+            .domStorageAccess(true)
+            .backgroundColor('#FFFFFF')
+            .onLoadIntercept((event) => {
+              let url: string = '';
+              try {
+                url = event.data.getRequestUrl();
+              } catch (e) {
               }
-            } catch (e) {
-            }
-          })
-          .onPageEnd(() => {
-            this.isLoading = false;
-            try {
-              this.currentUrl = this.webController.getUrl();
-            } catch (e) {
-            }
-          })
-          .onTitleReceive((event) => {
-            if (event.title.length > 0) {
-              this.title = event.title;
-            }
-          })
-          .onErrorReceive(() => {
-            this.isLoading = false;
-            this.loadError = '页面加载失败';
-          })
+              return this.interceptExternalScheme(url);
+            })
+            .javaScriptProxy({
+              object: this.bridge,
+              methodList: ['updateStatusBar'],
+              name: 'etsBridge',
+              controller: this.webController
+            })
+            .onPageBegin(() => {
+              this.isLoading = true;
+              try {
+                const domain: string = this.hostOf(this.currentUrl.length > 0 ? this.currentUrl : this.url);
+                if (domain.length > 0) {
+                  const cookies: string = HttpUtil.getInstance().getCookiesForDomain(domain);
+                  if (cookies.length > 0) {
+                    web_webview.WebCookieManager.configCookieSync('https://' + domain, cookies + '; Path=/', false, true);
+                  }
+                  const token: string = PreferenceUtil.getString('id_token');
+                  const isTrusted: boolean = this.isInCasArry(this.currentUrl.length > 0 ? this.currentUrl : this.url);
+                  if (isTrusted && token.length > 0) {
+                    web_webview.WebCookieManager.configCookieSync('https://' + domain, 'X-Id-Token=' + token + '; Path=/', false, true);
+                  }
+                  web_webview.WebCookieManager.saveCookieAsync();
+                }
+              } catch (e) {
+              }
+            })
+            .onPageEnd(() => {
+              this.isLoading = false;
+              try {
+                this.currentUrl = this.webController.getUrl();
+              } catch (e) {
+              }
+            })
+            .onTitleReceive((event) => {
+              if (event.title.length > 0) {
+                this.title = event.title;
+              }
+            })
+            .onErrorReceive(() => {
+              this.isLoading = false;
+              this.loadError = '页面加载失败';
+            })
 
-        if (this.isLoading) {
-          Column() {
-            LoadingProgress().width(36).height(36).color('#2979FF')
+          if (this.isLoading) {
+            Column() {
+              LoadingProgress().width(36).height(36).color('#2979FF')
+            }
+            .width('100%')
+            .height('100%')
+            .justifyContent(FlexAlign.Center)
+            .backgroundColor('#FFFFFF')
           }
-          .width('100%')
-          .height('100%')
-          .justifyContent(FlexAlign.Center)
-          .backgroundColor('#FFFFFF')
-        }
 
-        if (this.loadError.length > 0) {
-          Column() {
-            Text(this.loadError).fontSize(13).fontColor('#C62828').padding(12)
-            Text('重试')
-              .fontSize(13)
-              .fontWeight(FontWeight.Medium)
-              .fontColor('#2979FF')
-              .padding({ left: 20, right: 20, top: 8, bottom: 8 })
-              .borderRadius(16)
-              .backgroundColor('#FFFFFF')
-              .onClick(() => { this.loadWithAuth(); })
+          if (this.loadError.length > 0) {
+            Column() {
+              Text(this.loadError).fontSize(13).fontColor('#C62828').padding(12)
+              Text('重试')
+                .fontSize(13)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#2979FF')
+                .padding({ left: 20, right: 20, top: 8, bottom: 8 })
+                .borderRadius(16)
+                .backgroundColor('#FFFFFF')
+                .onClick(() => { this.loadWithAuth(); })
+            }
+            .width('100%')
+            .height('100%')
+            .justifyContent(FlexAlign.Center)
+            .backgroundColor('#FFFFFF')
           }
-          .width('100%')
-          .height('100%')
-          .justifyContent(FlexAlign.Center)
-          .backgroundColor('#FFFFFF')
         }
+        .layoutWeight(1)
       }
-      .width('100%').height('100%')
+      .width('100%')
+      .padding({ top: this.statusBarHeight })
     }
-    .title(this.CustomTitleBuilder())
+    .hideTitleBar(true)
     .backgroundColor('#FFFFFF')
-    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
-    .menus([
-      {
-        value: '',
-        symbolIcon: new SymbolGlyphModifier($r('sys.symbol.share')).fontSize(18),
-        action: () => { this.sharePage(); }
-      }
-    ])
     .onBackPressed(() => {
       this.goBack();
       return true;
