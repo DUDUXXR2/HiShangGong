@@ -150,6 +150,21 @@ export struct ServiceWebPage {
     }
   }
 
+  @Builder
+  CustomTitleBuilder() {
+    Row() {
+      Text(this.title)
+        .fontSize(15)
+        .fontWeight(FontWeight.Normal)
+        .fontColor('#000000')
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .textAlign(TextAlign.Center)
+    }
+    .width('100%')
+    .justifyContent(FlexAlign.Center)
+  }
+
   build() {
     NavDestination() {
       Stack() {
@@ -239,12 +254,13 @@ export struct ServiceWebPage {
       }
       .width('100%').height('100%')
     }
-    .title(this.title)
+    .title(this.CustomTitleBuilder())
     .backgroundColor('#FFFFFF')
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP])
     .menus([
       {
-        value: '分享',
-        symbolIcon: new SymbolGlyphModifier($r('sys.symbol.share')),
+        value: '',
+        symbolIcon: new SymbolGlyphModifier($r('sys.symbol.share')).fontSize(18),
         action: () => { this.sharePage(); }
       }
     ])
