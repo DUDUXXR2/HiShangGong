@@ -4,16 +4,10 @@ import { PreferenceUtil } from '../utils/PreferenceUtil';
 import { HttpUtil } from '../utils/HttpUtil';
 import { CAS_ARRY } from '../services/SqgConstants';
 import { WebPageParam } from './NavParams';
-import StatusBarUtil from '../utils/StatusBarUtil';
 import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { ImmersionButton } from '@tangs/components';
-import { ActionButtonModifier } from '../components/ImmersionActionButton';
-import { MaterialConfig } from '../utils/MaterialConfig';
-
-const FLOATING_BTN_SIZE: number = 36;
-const FLOATING_BTN_MARGIN: number = 16;
+import { SymbolGlyphModifier } from '@kit.ArkUI';
 
 class WebHeader {
   headerKey: string = '';
@@ -38,12 +32,10 @@ export struct ServiceWebPage {
   @State isLoading: boolean = true;
   @State loadError: string = '';
   @State currentUrl: string = '';
-  @StorageProp('statusBarHeight') statusBarHeight: number = 0;
   private webController: web_webview.WebviewController = new web_webview.WebviewController();
   private bridge: WebBridge = new WebBridge();
 
   aboutToAppear(): void {
-    StatusBarUtil.setStatusBarColor('#FFFFFF', '#000000');
     try {
       const list = this.pageStack.getParamByName('ServiceWebPage') as WebPageParam[];
       if (list !== undefined && list !== null && list.length > 0) {
@@ -55,10 +47,6 @@ export struct ServiceWebPage {
     } catch (e) {
     }
     setTimeout(() => { this.loadWithAuth(); }, 50);
-  }
-
-  aboutToDisappear(): void {
-    StatusBarUtil.resetStatusBar();
   }
 
   private loadWithAuth(): void {
@@ -164,63 +152,6 @@ export struct ServiceWebPage {
 
   build() {
     NavDestination() {
-      Column() {
-        Stack({ alignContent: Alignment.Center }) {
-          Text(this.title)
-            .fontSize(17)
-            .fontWeight(FontWeight.Medium)
-            .fontColor('#000000')
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .constraintSize({ maxWidth: '60%' })
-        }
-        .width('100%')
-        .height(FLOATING_BTN_SIZE)
-
-        Row() {
-          Stack() {
-            ImmersionButton({
-              systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
-              buttonModify: new ActionButtonModifier(FLOATING_BTN_SIZE, FLOATING_BTN_SIZE, Color.Transparent, '#80000000'),
-              click: (): void => { this.goBack(); }
-            }) {
-              SymbolGlyph($r('sys.symbol.chevron_backward'))
-                .fontSize(18)
-                .fontColor(['#000000'])
-                .fontWeight(FontWeight.Medium)
-                .renderingStrategy(SymbolRenderingStrategy.SINGLE)
-            }
-          }
-          .width(FLOATING_BTN_SIZE)
-          .height(FLOATING_BTN_SIZE)
-
-          Row().hitTestBehavior(HitTestMode.Transparent).layoutWeight(1).height(1)
-
-          Stack() {
-            ImmersionButton({
-              systemMaterialEffect: MaterialConfig.systemMaterialEffectParams(),
-              buttonModify: new ActionButtonModifier(FLOATING_BTN_SIZE, FLOATING_BTN_SIZE, Color.Transparent, '#80000000'),
-              click: (): void => { this.sharePage(); }
-            }) {
-              SymbolGlyph($r('sys.symbol.share'))
-                .fontSize(16)
-                .fontColor(['#000000'])
-                .fontWeight(FontWeight.Medium)
-                .renderingStrategy(SymbolRenderingStrategy.SINGLE)
-            }
-          }
-          .width(FLOATING_BTN_SIZE)
-          .height(FLOATING_BTN_SIZE)
-        }
-        .width('100%')
-        .padding({ left: FLOATING_BTN_MARGIN, right: FLOATING_BTN_MARGIN })
-        .height(FLOATING_BTN_SIZE)
-        .position({ x: 0, y: this.statusBarHeight + 8 })
-      }
-      .width('100%')
-      .height(this.statusBarHeight + FLOATING_BTN_SIZE + 24)
-      .backgroundColor('#FFFFFF')
-
       Stack() {
         Web({ src: '', controller: this.webController })
           .width('100%')
@@ -306,10 +237,17 @@ export struct ServiceWebPage {
           .backgroundColor('#FFFFFF')
         }
       }
-      .layoutWeight(1)
+      .width('100%').height('100%')
     }
-    .hideTitleBar(true)
+    .title(this.title)
     .backgroundColor('#FFFFFF')
+    .menus([
+      {
+        value: '分享',
+        symbolIcon: new SymbolGlyphModifier($r('sys.symbol.share')),
+        action: () => { this.sharePage(); }
+      }
+    ])
     .onBackPressed(() => {
       this.goBack();
       return true;

@@ -8,13 +8,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "E:/p12/yssg_release.p12",
-          "storePassword": "00000018AA437F020B80A53105BC31173A02B7731DB829DDC8ED20266F399936F897ABF27F211B41",
-          "keyAlias": "YSSG",
-          "keyPassword": "0000001813D24E7A1E7105A9732A93B08230CF6B7C88D9CDDF4FAF041275E70B2CBD35140D033438",
+          "certpath": "C:\\Users\\26567\\.ohos\\config\\default_HISG_GOOxzg9SaMbBOc-FF-xx5ks8InaNdWtEtHgQ865ZIX4=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001989DD01E50349C569605BC81DE659CF7316BDF203D056903C5B6D39F1A3CC6EA297EF0897C6",
+          "profile": "C:\\Users\\26567\\.ohos\\config\\default_HISG_GOOxzg9SaMbBOc-FF-xx5ks8InaNdWtEtHgQ865ZIX4=.p7b",
           "signAlg": "SHA256withECDSA",
-          "profile": "E:/p12/yssg_release_profileRelease.p7b",
-          "certpath": "E:/p12/yssg_release.cer"
+          "storeFile": "C:\\Users\\26567\\.ohos\\config\\default_HISG_GOOxzg9SaMbBOc-FF-xx5ks8InaNdWtEtHgQ865ZIX4=.p12",
+          "storePassword": "000000195C8960C5BDFC17DE173988A4CDE984036AC9909519D9FD8ABE35770A5B28984462DE5A68AA"
         }
       }
     ],
